@@ -23,6 +23,13 @@ the local network. Do not change these bindings until authentication exists.
 | File access | Read-only, confined to folders you register (resolved paths, no traversal or symlink escapes); system folders and the whole home folder cannot be registered; secret-looking files are never listed or read; deleting records never touches files ([ADR 0005](DECISIONS/0005-read-only-document-indexing.md)). |
 | Links | Only `http(s)://` document links are accepted (no `javascript:`/`file:`); opened with `rel="noopener noreferrer"`. |
 | Voice | Local transcription keeps audio on this machine; recordings are deleted immediately after transcription by default and can be deleted at any time; uploads are type- and size-limited; failed uploads are not kept. |
+| AI data flow | Off by default. With a local model (Ollama/LM Studio) data never leaves the machine; with a remote service, each request's workspace context is sent to it (the settings page warns). Copy-and-paste mode shows exactly what would be shared. |
+| AI secrets | `AI_API_KEY` is read only from `backend/.env` — never stored in the database, logged, or sent to the browser. |
+| AI logging | `ai_interactions` stores metadata only (feature, model, sizes, duration, error) — never prompts or answers. |
+| Exports | Generated on demand from stored data and streamed to the browser; nothing is written to disk on the server. |
+| Connected codebases | Read-only: fixed-argument git commands (`rev-parse`, `status`, `log`) with a timeout and no shell; nothing in the folder is changed (tested). Stores commit messages and changed file names only — never source code or author names. |
+| Claude Code intake | Hook and MCP endpoints require a private workspace token; summaries are secret-redacted and name-masked before storage; subagent events ignored; Claude's session transcripts are never read. Every task change from Claude or git is a suggestion awaiting approval. |
+| Named individuals | Administration → Privacy lists names to replace with roles in Claude reports, commit messages, AI prompts and exports. Seeded project data uses roles, not names. |
 | AI honesty | Unverified knowledge is labelled; AI-only writing outputs are refused rather than faked; voice/text suggestions change nothing until approved. |
 
 ## Data and retention

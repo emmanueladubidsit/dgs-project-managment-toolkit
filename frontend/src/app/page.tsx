@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { EmptyState, ExplainedProgress, PageHeader, QueryView, Section } from "@/components/common";
 import { ProjectFormDialog } from "@/components/project-form-dialog";
+import { PendingReview } from "@/components/suggestions";
 import { describeActivity } from "@/components/task-sheet";
 import { TaskFormDialog } from "@/components/task-form-dialog";
 import { TaskRow } from "@/components/task-views";
@@ -52,6 +53,7 @@ export default function DashboardPage() {
               <Stat label="This week" value={`${d.week_completed}/${d.week_planned}`} hint="planned tasks completed" />
             </div>
 
+            <div className="lg:col-span-3"><PendingReview title="Waiting for your review (from Claude Code, commits and notes)" /></div>
             <Section title="Today" className="lg:col-span-2" actions={<Link href="/planner" className="text-xs text-primary hover:underline">Open planner</Link>}>
               <TaskList tasks={d.due_today} empty="Nothing is due or planned for today." />
             </Section>

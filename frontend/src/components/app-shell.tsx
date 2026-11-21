@@ -1,7 +1,7 @@
 "use client";
 import {
   BarChart3, BookOpen, CalendarDays, CheckSquare, FileText, FolderKanban, LayoutDashboard, Library,
-  Menu, Mic, Moon, Plus, Settings, Sun, Target,
+  Menu, Mic, Moon, Plus, Settings, Sparkles, Sun, Target,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,6 +24,7 @@ export const NAV: { group: string; items: NavItem[] }[] = [
     group: "Delivery",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/assistant", label: "Assistant", icon: Sparkles },
       { href: "/projects", label: "Projects", icon: FolderKanban },
       { href: "/tasks", label: "My Tasks", icon: CheckSquare },
       { href: "/planner", label: "Planner", icon: CalendarDays },

@@ -27,3 +27,4 @@ backend/data/
 # Tooling
 graphify-out/
 backend/tests/_tmp_*
+frontend/e2e/_tmp_*

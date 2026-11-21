@@ -103,10 +103,46 @@ Outputs marked “needs AI” are not available until an AI provider is added �
 
 Press **⌘K / Ctrl+K** anywhere to search everything.
 
-## 11. Administration
+## 11. Assistant (optional AI)
+
+Turn it on in **Administration → AI assistant** (see DEVELOPMENT_SETUP). Then use **Assistant**:
+**Ask** about one project or everything (quick questions included); **Write** an email reply,
+weekly update, requirements, summary or rewrite using a project's context; **Notes → tasks** to
+get suggested tasks with priorities, estimates and acceptance criteria to approve; **New project
+from an idea** to get a draft brief that opens in the project form; **Research draft** to create a
+research record saved as “AI suggestion — awaiting review”. Each answer shows the workspace
+records it was given. AI also appears where you work: **Suggest with AI** for subtasks in a task,
+AI outputs and **Find with AI** on voice notes, and **Add AI executive summary** in reports.
+In copy-and-paste mode, each request opens a window with the prompt to copy into your chat and a
+box to paste its answer.
+
+## 12. Share with stakeholders
+
+- **Project → Export:** status update (PowerPoint, PDF or Word), project brief (Word or PDF) or the
+  full project report.
+- **Reports:** export a draft or saved report as Word, PDF or slides.
+- **Knowledge item → Export:** Word or PDF (unverified items carry a warning).
+- **Assistant answers and drafts:** download as Word or PDF.
+
+Exports are generated from what is recorded at that moment, and say so in their footer.
+
+## 13. Connect codebases and Claude Code
+
+On a project's **Codebase** tab, enter the project's folder and **Connect folder**. The workspace
+shows commits (message and changed files), uncommitted changes and Claude Code session summaries,
+and checks for new commits every few minutes (or **Sync now**). A commit like “Fix ISSUE-0001”
+suggests marking that task done; suggestions appear under **Updates waiting for your review** on
+the tab and on the dashboard — **Apply**, **Reject** or **Later** (or **Apply all**).
+
+To let Claude Code take part, follow **Administration → Claude Code** once: run the `claude mcp add`
+command shown (Claude can then list a project's open tasks and report progress), optionally paste
+the CLAUDE.md text into a project, and optionally add the hooks snippet for automatic session
+summaries. Add people's names under **Administration → Privacy** to have them masked.
+
+## 14. Administration
 
 **Administration** shows health, database version and size, record counts and backup commands.
 
 ## Coming later
 
-AI-assisted writing and planning (Phase 8) and Claude Code activity capture (Phase 9). See the roadmap.
+See the roadmap for what comes next.

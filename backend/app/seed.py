@@ -21,16 +21,31 @@ def seed_methodologies(db: Session) -> int:
         if db.scalar(select(Methodology.id).where(Methodology.slug == slug)):
             continue
         m = Methodology(
-            slug=slug, name=spec["name"], status=MethodologyStatus.PUBLISHED,
-            **{k: spec.get(k) for k in ("purpose", "when_to_use", "prerequisites", "tools",
-                                         "common_risks", "completion_criteria")},
+            slug=slug,
+            name=spec["name"],
+            status=MethodologyStatus.PUBLISHED,
+            **{
+                k: spec.get(k)
+                for k in (
+                    "purpose",
+                    "when_to_use",
+                    "prerequisites",
+                    "tools",
+                    "common_risks",
+                    "completion_criteria",
+                )
+            },
             limitations="Starter content: adapt it to your context before relying on it.",
-        )  # fmt: skip
+        )
         stages = [
-            StageIn(key=str(i), name=n, description=d or None,
-                    activities=[ActivityIn(title=a, expected_output=o) for a, o in acts])
+            StageIn(
+                key=str(i),
+                name=n,
+                description=d or None,
+                activities=[ActivityIn(title=a, expected_output=o) for a, o in acts],
+            )
             for i, (n, d, acts) in enumerate(spec["stages"])
-        ]  # fmt: skip
+        ]
         deliverables = [
             DeliverableIn(name=n, classification=c, stage_key=None if s is None else str(s))
             for n, c, s in spec["deliverables"]

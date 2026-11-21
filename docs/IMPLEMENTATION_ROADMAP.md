@@ -12,11 +12,33 @@ Last updated: **21 November 2026** (second session). Update this file at the end
 | 5 | Activity, work logs and reporting | ✅ Done |
 | 6 | Knowledge and research | ✅ Done |
 | 7 | Methodologies, playbooks, artefacts, documents | ✅ Done |
-| 8 | AI-assisted productivity (provider-independent, suggestions only) | ⏳ Next — review workflow and output slots already exist |
-| 9 | Voice and Claude Code integration | Voice ✅ · Claude Code planned |
+| 8 | AI-assisted productivity (provider-independent, suggestions only) | ✅ Done (+ stakeholder exports) |
+| 9 | Voice and Claude Code integration | ✅ Done (MCP + hooks, read-only codebase sync) |
 | 10 | Administration, polish, release | Partly done (health, diagnostics, backup guidance) |
 
 ## Session log
+
+### 21 November 2026 (fourth session) — seeded projects, privacy and Claude Code sync
+
+- Seeded three real projects from their own records (git-ignored specs, `make seed-projects`);
+  individuals' names masked as roles, with your later edits preserved.
+- Claude Code integration researched against the official docs (ADR 0008): MCP server and hooks,
+  no transcript parsing; read-only connected folders with git sync and auto-sync.
+- Privacy rules (names → roles) applied to Claude reports, commits, AI prompts and exports.
+- Tests: 99 backend, 21 frontend, 9 end-to-end; MCP server verified over stdio; hook command
+  verified with a Stop payload.
+
+### 21 November 2026 (third session) — Phase 8 AI assistant and stakeholder exports
+
+- AI provider layer with three no-new-cost modes (off / OpenAI-compatible service / copy-and-paste)
+  and presets for Ollama, LM Studio, organisation/Azure, Gemini, Groq and OpenRouter (ADR 0007).
+- Assistant page (Ask, Write, Notes → tasks, New project from an idea, Research draft) and AI in
+  context: subtask suggestions, voice-note AI outputs and suggestions, report executive summaries.
+- Exports to Word, PDF and PowerPoint for reports, project status updates, briefs, full project
+  reports and knowledge items (visually checked).
+- Tests: 90 backend (AI against a fake OpenAI-compatible server), 21 frontend, 8 end-to-end.
+- Fixed along the way: 4:3 slide layout on 16:9 decks; assistant suggestions not disappearing
+  after approval; a render-time mutation flagged by the React lint rules.
 
 ### 21 November 2026 (second session) — Phases 6, 7 and voice (9)
 
@@ -63,18 +85,11 @@ Delivered:
 
 ## Next steps
 
-**Phase 8 — AI-assisted productivity (optional, provider-independent)**
-1. `AIProvider` interface (`backend/app/services/ai/`) with a disabled default; configuration via
-   environment; no core feature depends on it.
-2. Implement the six “needs AI” writing outputs, each showing the context and sources used.
-3. AI suggestion generators that write to the existing `suggestions` table (`generator` = provider
-   name) so the same review/approve/duplicate workflow applies; AI knowledge drafts saved with
-   verification “AI suggestion — awaiting review”.
+**Set up a model** — install Ollama and pull a model (or configure the organisation service),
+then use *Test connection* in Administration.
 
-**Phase 9 — Claude Code activity capture**
-1. Research the supported Claude Code hook and session mechanisms first (do not assume APIs).
-2. Opt-in capture of summaries only (no raw transcripts by default), secret filtering, and
-   suggestions for task updates and troubleshooting guides — all reviewed before saving.
+**Connect Claude Code** — run the `claude mcp add` command from Administration → Claude Code, and
+optionally add the hooks snippet; then work in a connected folder and review reports.
 
 ## Backlog and known limitations
 
@@ -89,3 +104,6 @@ Delivered:
 - Knowledge: Markdown rendering (content is shown as plain text today); attachments.
 - Documents: automatic re-scan; full-text search inside indexed files.
 - Voice: speaker labels; more British-spelling rules; streaming transcription.
+- AI: streaming answers; saving Assistant conversations; AI-assisted delivery planning (distribute
+  tasks over the target period); semantic search over knowledge (embeddings).
+- Exports: branded templates (logo, organisation colours); charts in status decks.

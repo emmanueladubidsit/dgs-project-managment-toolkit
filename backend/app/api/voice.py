@@ -18,10 +18,10 @@ from app.config import get_settings
 from app.db import get_db
 from app.errors import AppError, bad_request, conflict, not_found
 from app.models import Milestone, Project, Suggestion, Task, VoiceNote, WorkLog
-from app.models.enums import Priority, WorkLogKind
+from app.models.enums import Priority, TaskStatus, WorkLogKind
 from app.models.voice import SuggestionKind, SuggestionStatus
 from app.services import text_tools
-from app.services.tasks import now, record
+from app.services.tasks import now, record, update_task
 from app.services.transcription import TranscriptionUnavailable, get_provider
 
 router = APIRouter(tags=["voice"])
@@ -497,6 +497,17 @@ def edit_suggestion(sid: uuid.UUID, body: SuggestionUpdate, db: Session = Depend
 @router.post("/suggestions/{sid}/approve", response_model=SuggestionOut)
 def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
     s = _pending(db, sid)
+    if s.kind == SuggestionKind.TASK_UPDATE:
+        task = db.get(Task, uuid.UUID(s.payload["task_id"])) if s.payload.get("task_id") else None
+        if not task or task.archived_at:
+            raise bad_request("The task no longer exists.")
+        changes = {"status": TaskStatus(s.payload.get("status", "completed"))}
+        update_task(db, task, changes)
+        record(db, task, "updated", {"source": [None, f"Approved suggestion from {s.generator}"]})
+        s.created_task_id = task.id
+        s.status, s.reviewed_at = SuggestionStatus.APPROVED, now()
+        db.commit()
+        return _sugg_out(db, s)
     title = (body.title or s.payload.get("title", "")).strip()
     project_id = body.project_id or s.project_id
     if not title:
@@ -516,13 +527,23 @@ def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
             if not ms or ms.project_id != project_id:
                 raise bad_request("Milestone does not belong to this project.")
         max_pos = db.scalar(select(func.max(Task.position)).where(Task.project_id == project_id))
+        parent = None
+        if s.payload.get("parent_id"):
+            parent = db.get(Task, uuid.UUID(s.payload["parent_id"]))
+            if not parent or parent.project_id != project_id:
+                raise bad_request("The parent task no longer exists in this project.")
+        origin = "an AI suggestion" if s.generator.startswith("ai:") else "a voice/text note"
         t = Task(
             project_id=project_id,
             title=title,
             priority=body.priority or Priority(s.payload.get("priority", "medium")),
-            milestone_id=body.milestone_id,
+            milestone_id=body.milestone_id or (parent.milestone_id if parent else None),
+            workstream_id=parent.workstream_id if parent else None,
+            parent_id=parent.id if parent else None,
             due_date=body.due_date,
-            description=f"From a voice/text note: “{s.evidence}”" if s.evidence else None,
+            estimate_hours=s.payload.get("estimate_hours"),
+            acceptance_criteria=s.payload.get("acceptance_criteria"),
+            description=f"From {origin}: “{s.evidence}”" if s.evidence else None,
             position=(max_pos or 0) + 1000,
             labels=[],
         )

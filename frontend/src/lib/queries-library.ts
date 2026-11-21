@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { useAction } from "./queries";
 import type {
-  Adoption, CategoryTemplate, DocumentRoot, KnowledgeDetail, KnowledgeItem, KnowledgeVersion, MethodologyDetail,
+  ClaudeSetup, CodeEvent, Connection, Adoption, CategoryTemplate, DocumentRoot, KnowledgeDetail, KnowledgeItem, KnowledgeVersion, MethodologyDetail,
   MethodologySummary, ProjectDeliverable, ProjectDocument, ScannedFile, SearchHit, Suggestion, VoiceNote, VoiceStatus,
 } from "./types";
 
@@ -157,3 +157,23 @@ export const useSuggestionAction = () =>
     action === "edit"
       ? api<Suggestion>(`/suggestions/${id}`, { method: "PATCH", body })
       : api<Suggestion>(`/suggestions/${id}/${action}`, { method: "POST", body: body ?? {} }));
+
+// ---------------------------------------------------------------- connected codebases & Claude
+export const useConnection = (projectId: string) =>
+  useQuery({ queryKey: ["connection", projectId], queryFn: () => api<Connection | null>(`/projects/${projectId}/connection`) });
+export const useCodeEvents = (projectId: string, enabled: boolean) =>
+  useQuery({ queryKey: ["code-events", projectId], queryFn: () => api<CodeEvent[]>(`/projects/${projectId}/code-events`), enabled, refetchInterval: 30_000 });
+export const useConnect = (projectId: string) =>
+  useAction((body: { path: string; accept_claude: boolean; auto_sync: boolean }) =>
+    api<Connection>(`/projects/${projectId}/connection`, { method: "PUT", body }), { success: "Folder connected and synced (read-only)." });
+export const useDisconnect = (projectId: string) =>
+  useAction(() => api<void>(`/projects/${projectId}/connection`, { method: "DELETE" }), { success: "Folder disconnected. Your files were not touched." });
+export const useSyncNow = (projectId: string) =>
+  useAction(() => api<{ new_commits: number; suggestions: number; uncommitted_changes: number; files_changed: number }>(`/projects/${projectId}/sync`, { method: "POST" }),
+    { success: (r) => `Synced: ${r.new_commits} new commit(s), ${r.suggestions} suggestion(s).` });
+export const useSaveEventAsUpdate = () =>
+  useAction((id: string) => api<{ work_log_id: string }>(`/code-events/${id}/save-as-update`, { method: "POST" }), { success: "Recorded as a progress update." });
+export const useClaudeSetup = () => useQuery({ queryKey: ["claude-setup"], queryFn: () => api<ClaudeSetup>("/claude/setup"), staleTime: Infinity });
+export const usePrivacyNames = () => useQuery({ queryKey: ["privacy-names"], queryFn: () => api<{ name: string; replacement: string }[]>("/privacy/names") });
+export const useSavePrivacyNames = () =>
+  useAction((body: { name: string; replacement: string }[]) => api<unknown>("/privacy/names", { method: "PUT", body }), { success: "Privacy rules saved." });

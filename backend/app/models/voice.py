@@ -14,6 +14,7 @@ from app.models.enums import str_enum
 
 class SuggestionKind(StrEnum):
     TASK = "task"
+    TASK_UPDATE = "task_update"  # change an existing task (e.g. mark completed)
     BLOCKER = "blocker"
     DECISION = "decision"
     PROGRESS = "progress"

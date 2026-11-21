@@ -31,7 +31,15 @@ move to another host later without changing the frontend.
 | `services/transcription.py` | Speech-to-text provider interface; local faster-whisper ([ADR 0006](DECISIONS/0006-voice-providers-and-no-faked-ai.md)) |
 | `services/text_tools.py` | Deterministic cleaning, structuring and suggestion extraction |
 | `seed.py`, `seed_data.py` | Idempotent starter methodology library |
-| `api/` | Routers: `projects`, `tasks`, `planning`, `reports`, `system` (dashboard, health, admin), `knowledge` (+ global search), `methodologies`, `documents`, `voice` (+ suggestions) |
+| `services/ai/provider.py` | AI provider modes (off / OpenAI-compatible / copy-and-paste), config, usage log ([ADR 0007](DECISIONS/0007-ai-assistant-without-new-costs.md)) |
+| `services/ai/context.py` | Grounded, size-limited workspace context with the list of sources used |
+| `services/ai/features.py` | Prompts and JSON parsing for each AI feature |
+| `services/codebase.py` | Read-only git sync, Claude hook handling and task matching ([ADR 0008](DECISIONS/0008-claude-code-sync-via-mcp-and-hooks.md)) |
+| `services/privacy.py` | Name masking and secret redaction for text entering or leaving the workspace |
+| `mcp_server.py` | MCP server for Claude Code (`list_open_tasks`, `report_task_progress`, `record_update`) |
+| `seed_projects.py` | Seeds real projects from git-ignored JSON specs |
+| `services/exports.py` | Markdown → Word (python-docx), PDF (ReportLab) and PowerPoint (python-pptx) |
+| `api/` | Routers: `projects`, `tasks`, `planning`, `reports`, `system` (dashboard, health, admin), `knowledge` (+ global search), `methodologies`, `documents`, `voice` (+ suggestions), `ai`, `exports`, `claude` (connections, hooks, MCP support, privacy) |
 | `errors.py` | One error shape: `{"error": {"code", "message", "details"}}`; unexpected errors are logged, never leaked |
 
 ### Core business rules
@@ -84,7 +92,7 @@ move to another host later without changing the frontend.
 
 - **AI** will sit behind a provider interface in `backend/app/services/ai/` and only ever produce
   *suggestions* that a person approves (Phase 8). The core never imports it.
-- **AI writing outputs** (rewrite, summary, email drafts) are already listed in Voice & Writing and
-  return `needs_ai` until a provider is configured.
+- **More AI providers** need only an OpenAI-compatible endpoint; non-compatible ones implement the
+  same `complete()` contract.
 - **Multi-user**: `assignee` exists as free text; roles and ownership can be added without
   restructuring (admin endpoints are already separated under `/api/admin`).

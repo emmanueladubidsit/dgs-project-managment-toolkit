@@ -1,4 +1,6 @@
 "use client";
+import { AISettings } from "@/components/ai-settings";
+import { ClaudeSetupPanel, PrivacyPanel } from "@/components/codebase";
 import { PageHeader, QueryView, Section } from "@/components/common";
 import { useHealth, useSystemInfo } from "@/lib/queries";
 
@@ -44,12 +46,15 @@ export default function AdminPage() {
                 </Section>
                 <Section title="Integrations">
                   <dl className="space-y-1 text-sm">{Object.entries(i.integrations).map(([k, v]) => <Row key={k} k={k.replace("_", " ")} v={v} />)}</dl>
-                  <p className="mt-2 text-xs text-muted-foreground">AI, Claude Code and voice integrations are optional and arrive in later phases. The workspace works fully without them.</p>
+                  <p className="mt-2 text-xs text-muted-foreground">All integrations are optional; the workspace works fully without them.</p>
                 </Section>
               </>
             );
           }}
         </QueryView>
+        <AISettings />
+        <ClaudeSetupPanel />
+        <PrivacyPanel />
         <Section title="Backups" className="md:col-span-2">
           <p className="text-sm">Back up the database from a terminal in the project folder:</p>
           <pre className="mt-2 overflow-x-auto rounded-md bg-muted p-3 text-xs">docker exec dgs-workspace-db pg_dump -U dgs -Fc dgs_workspace &gt; backups/workspace-$(date +%F).dump</pre>

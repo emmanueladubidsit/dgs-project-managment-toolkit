@@ -1,5 +1,5 @@
 "use client";
-import { Archive, ArchiveRestore, BookOpen, CalendarDays, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookOpen, CalendarDays, Link2, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import {
   formatDate, formatDateTime, hours, PRIORITIES, PRIORITY_LABEL, relativeDue, STATUS_LABEL, TASK_STATUSES,
   VERIFICATION_LABEL,
 } from "@/lib/format";
-import { useDocuments, useKnowledgeList } from "@/lib/queries-library";
+import { useDocuments, useKnowledgeList, useSuggestions } from "@/lib/queries-library";
+import { useAICall, useAIStatus } from "./ai";
+import { SuggestionCard } from "./suggestions";
 import {
   useAddComment, useAddDependency, useArchiveTask, useComments, useDeleteTask, useRemoveDependency,
   useTask, useTaskActivity, useTasks, useUpdateTask,
@@ -163,11 +165,17 @@ function TextBlock({ title, text, missing }: { title: string; text: string | nul
 
 function Subtasks({ task, onNavigate }: { task: TaskDetail; onNavigate: (id: string) => void }) {
   const [adding, setAdding] = useState(false);
+  const ai = useAIStatus();
+  const { call, busy } = useAICall();
+  const pending = useSuggestions({ source_id: task.id, status: "pending" });
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold">Subtasks {task.subtask_count > 0 && <span className="font-normal text-muted-foreground">({task.subtasks_completed}/{task.subtask_count} completed)</span>}</h3>
-        <Button size="sm" variant="ghost" onClick={() => setAdding(true)}><Plus /> Add subtask</Button>
+        <span className="flex gap-1">
+          {ai.data?.ready && <Button size="sm" variant="ghost" disabled={busy} onClick={() => call("/ai/breakdown/" + task.id, {})}><Sparkles /> {busy ? "Thinking…" : "Suggest with AI"}</Button>}
+          <Button size="sm" variant="ghost" onClick={() => setAdding(true)}><Plus /> Add subtask</Button>
+        </span>
       </div>
       {task.subtasks.length === 0 ? (
         <p className="text-sm text-muted-foreground">No subtasks.</p>
@@ -185,6 +193,12 @@ function Subtasks({ task, onNavigate }: { task: TaskDetail; onNavigate: (id: str
       )}
       {task.subtask_count > 0 && task.status !== "completed" && task.subtasks_completed === task.subtask_count && (
         <p className="mt-2 text-xs text-muted-foreground">All subtasks are completed. The parent is not completed automatically — update its status when you are satisfied.</p>
+      )}
+      {(pending.data ?? []).length > 0 && (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Suggested subtasks — approve the ones you want</p>
+          <ul className="space-y-2">{(pending.data ?? []).map((s) => <SuggestionCard key={s.id} s={s} noteProjectId={task.project_id} hideProject />)}</ul>
+        </div>
       )}
       <TaskFormDialog open={adding} onOpenChange={setAdding}
         defaults={{ project_id: task.project_id, parent_id: task.id, workstream_id: task.workstream_id, milestone_id: task.milestone_id }} />

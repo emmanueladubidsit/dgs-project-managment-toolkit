@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     voice_retention: str = "delete"
     recordings_dir: str = "data/recordings"
     max_upload_mb: int = 50
+    # AI assistant defaults (overridable in Administration). The key is only ever read from env.
+    ai_provider: str = "disabled"  # disabled | openai_compatible | manual
+    ai_base_url: str = ""
+    ai_model: str = ""
+    ai_api_key: str = ""
+    # Connected codebases: background sync interval (0 disables the background loop).
+    sync_interval_seconds: int = 180
 
     @property
     def cors_origin_list(self) -> list[str]:

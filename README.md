@@ -4,8 +4,9 @@ A local-first workspace for managing projects from idea to maintenance: projects
 milestones, tasks and subtasks; daily, weekly and monthly planning; work logs; and reports
 generated only from what you have actually recorded.
 
-It works fully **without any AI service or API key**. Voice transcription runs locally (optional);
-AI writing and Claude Code integrations are planned add-ons (see [the roadmap](docs/IMPLEMENTATION_ROADMAP.md)).
+It works fully **without any AI service or API key**. An optional, built-in AI assistant can use a
+free local model, your organisation's AI service, or copy-and-paste with any AI chat you already
+have — so it adds no new cost ([ADR 0007](docs/DECISIONS/0007-ai-assistant-without-new-costs.md)).
 
 ## Quick start
 
@@ -65,6 +66,20 @@ Then open **http://localhost:3010**.
   transcription with audio deleted after transcription by default; editable transcripts;
   rule-based cleaning, structuring, meeting/research notes, daily updates and task breakdowns;
   suggested tasks, blockers and decisions that you approve, reject or defer, with duplicate checks.
+- **AI assistant (optional)** — ask questions about one project or the whole portfolio; draft emails,
+  updates, requirements and summaries with project context; turn notes into reviewed tasks; break
+  tasks into subtasks; turn an idea into a project brief; draft research; add an executive summary
+  to reports. Answers show the workspace records used; everything is a draft or suggestion you
+  approve.
+- **Stakeholder exports** — Word, PDF and PowerPoint for reports, project status updates, project
+  briefs, full project reports and knowledge items.
+- **Connected codebases and Claude Code sync** — connect each project's folder (read-only):
+  commits, changed files and uncommitted changes appear on the project's Codebase tab; commits
+  that mention a task suggest marking it done. Claude Code can list a project's open tasks and
+  report progress through the workspace MCP server, and optional hooks record session summaries.
+  Every status change waits for your approval ([ADR 0008](docs/DECISIONS/0008-claude-code-sync-via-mcp-and-hooks.md)).
+- **Privacy** — named individuals are masked as roles and secrets redacted in Claude reports,
+  commit messages, AI prompts and exports.
 - **Global search** (⌘K / Ctrl+K) across projects, tasks, knowledge, methodologies, documents,
   updates and notes.
 - **Administration** — health, database and record diagnostics, backup guidance.

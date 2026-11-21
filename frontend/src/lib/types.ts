@@ -406,10 +406,22 @@ export interface VoiceNote {
   pending_suggestions: number;
 }
 
-export type SuggestionKind = "task" | "blocker" | "decision" | "progress";
+export type SuggestionKind = "task" | "task_update" | "blocker" | "decision" | "progress";
 export interface Suggestion {
   id: string; kind: SuggestionKind; status: "pending" | "approved" | "rejected" | "deferred"; source_type: string;
   source_id: string | null; project_id: string | null; project_name: string | null; generator: string;
-  payload: { title?: string; priority?: Priority }; evidence: string | null; duplicate_of_task_id: string | null;
+  payload: { title?: string; priority?: Priority; estimate_hours?: number; acceptance_criteria?: string; parent_id?: string; task_id?: string; status?: TaskStatus }; evidence: string | null; duplicate_of_task_id: string | null;
   duplicate_of_title: string | null; created_task_id: string | null; created_work_log_id: string | null;
 }
+
+// ---------------------------------------------------------------- connected codebases
+export interface Connection {
+  id: string; project_id: string; project_name: string; path: string; available: boolean; is_git: boolean;
+  accept_claude: boolean; auto_sync: boolean; branch: string | null; head: string | null; uncommitted_changes: number;
+  last_synced_at: string | null; last_activity_at: string | null; last_error: string | null;
+}
+export interface CodeEvent {
+  id: string; kind: "commit" | "claude_session" | "claude_task" | "files"; ref: string; title: string;
+  summary: string | null; detail: { files?: string[]; file_count?: number; branch?: string; turns?: number; ended?: boolean; status?: string }; occurred_at: string;
+}
+export interface ClaudeSetup { token: string; hook_settings: Record<string, unknown>; mcp_command: string; claude_md: string }

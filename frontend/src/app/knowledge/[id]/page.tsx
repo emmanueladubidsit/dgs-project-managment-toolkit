@@ -3,6 +3,7 @@ import { Archive, ArchiveRestore, ArrowLeft, Pencil, RotateCcw, Trash2, X } from
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
+import { ExportMenu } from "@/components/ai";
 import { PageHeader, QueryView, Section } from "@/components/common";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { KnowledgeFormDialog, VerificationBadge, VerificationNotice } from "@/components/knowledge";
@@ -36,6 +37,10 @@ function Item({ item: k }: { item: KnowledgeDetail }) {
       <PageHeader title={k.title}
         description={<span className="flex flex-wrap items-center gap-2">{template?.label} · version {k.version} <VerificationBadge value={k.verification} /></span>}
         actions={<>
+          <ExportMenu items={[
+            { label: "Word document", href: `/api/export/knowledge/${k.id}?format=docx` },
+            { label: "PDF", href: `/api/export/knowledge/${k.id}?format=pdf` },
+          ]} />
           <KnowledgeFormDialog item={k} trigger={<Button variant="outline"><Pencil /> Edit</Button>} />
           <Button variant="outline" onClick={() => act.mutate({ path: k.archived_at ? "/restore" : "/archive" })}>
             {k.archived_at ? <><ArchiveRestore /> Restore</> : <><Archive /> Archive</>}

@@ -49,10 +49,20 @@ function initial(p?: Project): FormState {
   } as FormState;
 }
 
-export function ProjectFormDialog({ project, trigger }: { project?: Project; trigger: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => initial(project));
-  const [streams, setStreams] = useState<Set<string>>(new Set(SUGGESTED_WORKSTREAMS.slice(0, 4)));
+export type ProjectDraft = Partial<Record<keyof ProjectFields, string>> & { workstreams?: string[] };
+
+/** Create/edit a project. `draft` pre-fills a new project (e.g. from the AI assistant);
+ *  pass `open`/`onOpenChange` to control it without a trigger. */
+export function ProjectFormDialog({ project, trigger, draft, open: openProp, onOpenChange }: {
+  project?: Project; trigger?: ReactNode; draft?: ProjectDraft; open?: boolean; onOpenChange?: (o: boolean) => void;
+}) {
+  const [innerOpen, setInnerOpen] = useState(false);
+  const open = openProp ?? innerOpen;
+  const setOpen = onOpenChange ?? setInnerOpen;
+  const allStreams = [...new Set([...SUGGESTED_WORKSTREAMS, ...(draft?.workstreams ?? [])])];
+  const fromDraft = () => ({ ...initial(project), ...Object.fromEntries(Object.entries(draft ?? {}).filter(([k, v]) => k !== "workstreams" && typeof v === "string")) }) as FormState;
+  const [form, setForm] = useState(fromDraft);
+  const [streams, setStreams] = useState<Set<string>>(new Set(draft?.workstreams?.length ? draft.workstreams : SUGGESTED_WORKSTREAMS.slice(0, 4)));
   const [more, setMore] = useState(false);
   const stages = useStages();
   const create = useCreateProject();
@@ -75,7 +85,7 @@ export function ProjectFormDialog({ project, trigger }: { project?: Project; tri
     if (project) {
       update.mutate(body, { onSuccess: () => setOpen(false) });
     } else {
-      create.mutate({ ...body, workstreams: SUGGESTED_WORKSTREAMS.filter((s) => streams.has(s)) }, {
+      create.mutate({ ...body, workstreams: allStreams.filter((s) => streams.has(s)) }, {
         onSuccess: (p) => { setOpen(false); router.push(`/projects/${p.id}`); },
       });
     }
@@ -83,8 +93,8 @@ export function ProjectFormDialog({ project, trigger }: { project?: Project; tri
 
   const pending = create.isPending || update.isPending;
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (o) { setForm(initial(project)); setMore(!!project); } setOpen(o); }}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <Dialog open={open} onOpenChange={(o) => { if (o) { setForm(fromDraft()); setMore(!!project || !!draft); } setOpen(o); }}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{project ? "Edit project" : "New project"}</DialogTitle>
@@ -106,7 +116,7 @@ export function ProjectFormDialog({ project, trigger }: { project?: Project; tri
               <legend className="mb-2 text-sm font-medium">Workstreams to create</legend>
               <p className="mb-2 text-xs text-muted-foreground">Pick only what this project needs. You can add, rename or remove workstreams later.</p>
               <div className="grid gap-1.5 sm:grid-cols-2">
-                {SUGGESTED_WORKSTREAMS.map((s) => (
+                {allStreams.map((s) => (
                   <label key={s} className="flex items-center gap-2 text-sm">
                     <Checkbox checked={streams.has(s)} onCheckedChange={(c) => setStreams((cur) => { const n = new Set(cur); if (c) n.add(s); else n.delete(s); return n; })} />
                     {s}

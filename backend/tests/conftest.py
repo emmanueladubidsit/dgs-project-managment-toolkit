@@ -17,6 +17,7 @@ TEST_URL = _TestUrl().test_database_url
 if "test" not in TEST_URL.rsplit("/", 1)[-1]:
     raise RuntimeError(f"Refusing to run tests against a non-test database: {TEST_URL}")
 os.environ["DATABASE_URL"] = TEST_URL  # must happen before the app is imported
+os.environ["SYNC_INTERVAL_SECONDS"] = "0"  # no background sync during tests
 
 import pytest  # noqa: E402
 from alembic import command  # noqa: E402
@@ -34,7 +35,8 @@ DATA_TABLES = [
     "knowledge_relations", "knowledge_items", "methodology_versions", "project_deliverables",
     "project_methodologies", "deliverable_definitions", "methodology_activities",
     "methodology_stages", "methodologies", "document_task_links", "project_documents",
-    "document_roots", "suggestions", "voice_notes",
+    "document_roots", "suggestions", "voice_notes", "system_settings", "ai_interactions",
+    "code_events", "project_connections",
 ]  # fmt: skip
 
 

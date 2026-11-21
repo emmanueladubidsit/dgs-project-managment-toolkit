@@ -1,5 +1,5 @@
 "use client";
-import { FolderPlus, Search } from "lucide-react";
+import { FolderPlus, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { EmptyState, ExplainedProgress, PageHeader, PriorityBadge, QueryView } from "@/components/common";
@@ -22,7 +22,10 @@ export default function ProjectsPage() {
   return (
     <>
       <PageHeader title="Projects" description="Every project, its stage and how far it has progressed."
-        actions={<ProjectFormDialog trigger={<Button><FolderPlus /> New project</Button>} />} />
+        actions={<>
+          <Button variant="outline" asChild><Link href="/assistant"><Sparkles /> Start from an idea</Link></Button>
+          <ProjectFormDialog trigger={<Button><FolderPlus /> New project</Button>} />
+        </>} />
       <div className="mb-4 flex flex-wrap gap-2">
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />

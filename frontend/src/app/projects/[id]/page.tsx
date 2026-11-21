@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { EmptyState, ExplainedProgress, PageHeader, PriorityBadge, QueryView, Section } from "@/components/common";
+import { ExportMenu } from "@/components/ai";
+import { CodebasePanel } from "@/components/codebase";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DocumentsList } from "@/components/documents";
 import { KnowledgeFormDialog, VerificationBadge } from "@/components/knowledge";
@@ -49,6 +51,15 @@ function Workspace({ project: p }: { project: Project }) {
         actions={<>
           <Button onClick={() => setNewTask(true)}><Plus /> New task</Button>
           <WorkLogDialog defaults={{ project_id: p.id }} trigger={<Button variant="outline"><MessageSquarePlus /> Add update</Button>} />
+          <ExportMenu items={[
+            { group: "Status update (for stakeholders)", label: "Slides (PowerPoint)", href: `/api/export/project/${p.id}/status?format=pptx` },
+            { group: "Status update (for stakeholders)", label: "PDF", href: `/api/export/project/${p.id}/status?format=pdf` },
+            { group: "Status update (for stakeholders)", label: "Word document", href: `/api/export/project/${p.id}/status?format=docx` },
+            { group: "Project brief", label: "Word document", href: `/api/export/project/${p.id}/brief?format=docx` },
+            { group: "Project brief", label: "PDF", href: `/api/export/project/${p.id}/brief?format=pdf` },
+            { group: "Full project report", label: "Word document", href: `/api/export/project/${p.id}/report?format=docx` },
+            { group: "Full project report", label: "PDF", href: `/api/export/project/${p.id}/report?format=pdf` },
+          ]} />
           <ProjectFormDialog project={p} trigger={<Button variant="outline"><Pencil /> Edit</Button>} />
           <Button variant="outline" onClick={() => archive.mutate({ id: p.id, restore: p.status === "archived" })}>
             {p.status === "archived" ? <><ArchiveRestore /> Restore</> : <><Archive /> Archive</>}
@@ -72,6 +83,7 @@ function Workspace({ project: p }: { project: Project }) {
           <TabsTrigger value="backlog">Backlog</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="workstreams">Workstreams</TabsTrigger>
+          <TabsTrigger value="codebase">Codebase</TabsTrigger>
           <TabsTrigger value="methodology">Methodology</TabsTrigger>
           <TabsTrigger value="plan">Plan check</TabsTrigger>
           <TabsTrigger value="decisions">Decisions &amp; updates</TabsTrigger>
@@ -84,6 +96,7 @@ function Workspace({ project: p }: { project: Project }) {
         <TabsContent value="backlog"><ProjectTasks projectId={p.id} mode="list" /></TabsContent>
         <TabsContent value="milestones"><ProjectMilestones projectId={p.id} /></TabsContent>
         <TabsContent value="workstreams"><Section title="Workstreams"><WorkstreamManager projectId={p.id} /></Section></TabsContent>
+        <TabsContent value="codebase"><CodebasePanel projectId={p.id} /></TabsContent>
         <TabsContent value="methodology"><ProjectMethodologies projectId={p.id} /></TabsContent>
         <TabsContent value="plan"><PlanCheckView projectId={p.id} /></TabsContent>
         <TabsContent value="library"><Library projectId={p.id} /></TabsContent>

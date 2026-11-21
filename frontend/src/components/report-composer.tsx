@@ -1,5 +1,6 @@
 "use client";
-import { Copy, Download, FileText, Save, Trash2 } from "lucide-react";
+import { Copy, Download, FileDown, FileText, Presentation, Save, Sparkles, Trash2 } from "lucide-react";
+import { downloadPost, ExportMenu, useAICall, useAIStatus } from "./ai";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,8 @@ export function ReportComposer({ projectId }: { projectId?: string }) {
   const [audience, setAudience] = useState("stakeholder");
   const [draft, setDraft] = useState<(ReportDraft & { id?: string }) | null>(null);
   const projects = useProjects();
+  const ai = useAIStatus();
+  const { call, busy } = useAICall();
   const generate = useGenerateReport();
   const save = useSaveReport();
   const update = useUpdateReport();
@@ -80,7 +83,22 @@ export function ReportComposer({ projectId }: { projectId?: string }) {
                 <Save /> {draft.id ? "Save changes" : "Save report"}
               </Button>
               <Button variant="outline" onClick={() => copy(draft.content)}><Copy /> Copy</Button>
-              <Button variant="outline" onClick={() => download(draft.title, draft.content)}><Download /> Download .md</Button>
+              <Button variant="outline" onClick={() => download(draft.title, draft.content)}><Download /> Markdown</Button>
+              <Button variant="outline" onClick={() => downloadPost(draft.title, draft.content, "docx")}><FileDown /> Word</Button>
+              <Button variant="outline" onClick={() => downloadPost(draft.title, draft.content, "pdf")}><FileDown /> PDF</Button>
+              <Button variant="outline" onClick={() => downloadPost(draft.title, draft.content, "pptx")}><Presentation /> Slides</Button>
+              {ai.data?.ready && !draft.content.includes("## Executive summary") && (
+                <Button variant="outline" disabled={busy} onClick={async () => {
+                  const r = await call<{ text: string }>("/ai/report-summary", { content: draft.content });
+                  if (r) {
+                    const lines = draft.content.split("\n");
+                    const at = lines.findIndex((l, i) => i > 0 && l.startsWith("## "));
+                    const block = ["## Executive summary", "", "_AI-assisted summary of the sections below — check before sharing._", "", r.text, ""];
+                    lines.splice(at === -1 ? lines.length : at, 0, ...block);
+                    setDraft({ ...draft, content: lines.join("\n") });
+                  }
+                }}><Sparkles /> {busy ? "Summarising…" : "Add AI executive summary"}</Button>
+              )}
             </div>
           </div>
         </Section>
@@ -110,6 +128,11 @@ function SavedReports({ projectId, onOpen }: { projectId?: string; onOpen: (r: R
                   </button>
                   <div className="flex shrink-0 gap-1">
                     <Button size="icon-sm" variant="ghost" aria-label={`Copy ${r.title}`} onClick={() => copy(r.content)}><Copy /></Button>
+                    <ExportMenu label="" items={[
+                      { label: "Word document", href: `/api/export/report/${r.id}?format=docx` },
+                      { label: "PDF", href: `/api/export/report/${r.id}?format=pdf` },
+                      { label: "Slides (PowerPoint)", href: `/api/export/report/${r.id}?format=pptx` },
+                    ]} />
                     <ConfirmDialog trigger={<Button size="icon-sm" variant="ghost" aria-label={`Delete ${r.title}`}><Trash2 /></Button>}
                       title="Delete this saved report?" description="The underlying tasks and updates are not affected; only this saved copy is removed."
                       onConfirm={() => del.mutate(r.id)} />

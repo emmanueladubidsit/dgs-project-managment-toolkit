@@ -1,5 +1,5 @@
 "use client";
-import { AlertTriangle, ArrowLeft, Check, Clock, Copy, Lightbulb, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Copy, Lightbulb, Save, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
@@ -7,20 +7,19 @@ import { toast } from "sonner";
 import { PageHeader, QueryView, Section } from "@/components/common";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { SelectField, TextField } from "@/components/form-fields";
-import { useOpenTask } from "@/components/task-sheet";
+import { useAICall, useAIStatus } from "@/components/ai";
+import { SuggestionCard } from "@/components/suggestions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDateTime, PRIORITIES, PRIORITY_LABEL, todayISO, WORKLOG_KIND_LABEL } from "@/lib/format";
+import { formatDateTime, todayISO, WORKLOG_KIND_LABEL } from "@/lib/format";
 import { useProjects } from "@/lib/queries";
 import {
-  useDeleteAudio, useDeleteVoiceNote, useExtractSuggestions, useSaveAsUpdate, useSuggestionAction, useSuggestions,
+  useDeleteAudio, useDeleteVoiceNote, useExtractSuggestions, useSaveAsUpdate, useSuggestions,
   useTransform, useUpdateVoiceNote, useVoiceNote, useVoiceStatus,
 } from "@/lib/queries-library";
-import type { Suggestion, VoiceNote } from "@/lib/types";
-
-const KIND_LABEL = { task: "Task", blocker: "Blocker", decision: "Decision", progress: "Progress" };
+import type { VoiceNote } from "@/lib/types";
 
 export default function VoiceNotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -81,6 +80,9 @@ function Note({ note: n }: { note: VoiceNote }) {
 
 function WritingTools({ note, text }: { note: VoiceNote; text: string }) {
   const status = useVoiceStatus();
+  const ai = useAIStatus();
+  const { call, busy } = useAICall();
+  const aiReady = !!ai.data?.ready;
   const transform = useTransform(note.id);
   const saveUpdate = useSaveAsUpdate(note.id);
   const [output, setOutput] = useState("clean_transcript");
@@ -96,14 +98,21 @@ function WritingTools({ note, text }: { note: VoiceNote; text: string }) {
           <SelectTrigger className="w-60" aria-label="Output type"><SelectValue /></SelectTrigger>
           <SelectContent>
             {outputs.filter((o) => !o.needs_ai).map((o) => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}
-            {outputs.filter((o) => o.needs_ai).map((o) => <SelectItem key={o.key} value={o.key}>{o.label} (needs AI)</SelectItem>)}
+            {outputs.filter((o) => o.needs_ai).map((o) => <SelectItem key={o.key} value={o.key}>{o.label} ({aiReady ? "AI" : "needs AI"})</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button disabled={!text.trim() || transform.isPending || chosen?.needs_ai} onClick={() => transform.mutate({ output, text }, { onSuccess: (r) => setResult(r.text ?? "") })}>Generate</Button>
+        <Button disabled={!text.trim() || transform.isPending || busy || (chosen?.needs_ai && !aiReady)} onClick={async () => {
+          if (chosen?.needs_ai) {
+            const r = await call<{ text: string }>("/ai/write", { output, text, project_id: note.project_id });
+            if (r) setResult(r.text);
+          } else transform.mutate({ output, text }, { onSuccess: (r) => setResult(r.text ?? "") });
+        }}>{busy ? "Writing…" : "Generate"}</Button>
       </div>
-      {chosen?.needs_ai ? (
+      {chosen?.needs_ai && aiReady ? (
+        <p className="mt-2 text-xs text-muted-foreground"><Sparkles className="mr-1 inline size-3" aria-hidden />Written by your AI assistant{note.project_id ? " using this note’s project context" : ""}. It is told not to invent facts or commitments — check the draft before using it.</p>
+      ) : chosen?.needs_ai ? (
         <p className="mt-3 flex items-start gap-2 rounded-lg bg-muted/60 px-3 py-2 text-sm"><Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden />
-          {chosen.label} needs an AI writing provider, which is not configured. It is never faked: the workspace does not invent wording, commitments or facts. The other outputs work without AI.</p>
+          {chosen.label} needs the AI assistant, which is off. It is never faked: the workspace does not invent wording, commitments or facts. <Link href="/admin" className="underline">Turn the assistant on</Link>, or use the other outputs, which work without AI.</p>
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">Rule-based: removes filler words, fixes spacing and capitalisation, uses British spelling and regroups your own sentences. It does not add anything you did not say.</p>
       )}
@@ -127,58 +136,24 @@ function WritingTools({ note, text }: { note: VoiceNote; text: string }) {
 }
 
 function Suggestions({ note }: { note: VoiceNote }) {
+  const ai = useAIStatus();
+  const { call, busy } = useAICall();
   const pending = useSuggestions({ source_id: note.id, status: "pending" });
   const deferred = useSuggestions({ source_id: note.id, status: "deferred" });
   const extract = useExtractSuggestions(note.id);
   const items = [...(pending.data ?? []), ...(deferred.data ?? [])];
   return (
-    <Section title="Suggested tasks and updates" actions={<Button size="sm" onClick={() => extract.mutate(undefined)} disabled={extract.isPending}><Lightbulb /> Find suggestions</Button>}>
-      <p className="mb-3 text-xs text-muted-foreground">Found by simple rules (“we need to…”, “we decided…”, “blocked on…”). Nothing is added until you approve it, and likely duplicates of existing tasks are flagged.</p>
+    <Section title="Suggested tasks and updates" actions={<div className="flex gap-2">
+      <Button size="sm" variant={ai.data?.ready ? "outline" : "default"} onClick={() => extract.mutate(undefined)} disabled={extract.isPending}><Lightbulb /> Find suggestions</Button>
+      {ai.data?.ready && <Button size="sm" disabled={busy} onClick={async () => {
+        const r = await call<unknown[]>("/ai/suggest", { voice_note_id: note.id });
+        if (r && !r.length) toast.info("No new suggestions found.");
+      }}><Sparkles /> {busy ? "Reading…" : "Find with AI"}</Button>}
+    </div>}>
+      <p className="mb-3 text-xs text-muted-foreground">“Find suggestions” uses simple phrase rules (“we need to…”, “we decided…”){ai.data?.ready ? "; “Find with AI” reads the whole note and adds priorities and estimates" : ""}. Nothing is added until you approve it, and likely duplicates of existing tasks are flagged.</p>
       {items.length === 0 ? <p className="text-sm text-muted-foreground">No suggestions waiting for review.</p> : (
         <ul className="space-y-3">{items.map((s) => <SuggestionCard key={s.id} s={s} noteProjectId={note.project_id} />)}</ul>
       )}
     </Section>
-  );
-}
-
-function SuggestionCard({ s, noteProjectId }: { s: Suggestion; noteProjectId: string | null }) {
-  const act = useSuggestionAction();
-  const projects = useProjects();
-  const openTask = useOpenTask();
-  const [title, setTitle] = useState(s.payload.title ?? "");
-  const [priority, setPriority] = useState(s.payload.priority ?? "medium");
-  const [project, setProject] = useState<string | null>(s.project_id ?? noteProjectId);
-  const approve = (allow = false) => act.mutate({ id: s.id, action: "approve", body: { title, priority, project_id: project, allow_duplicate: allow, entry_date: todayISO() } });
-  return (
-    <li className="rounded-lg border p-3">
-      <div className="mb-2 flex items-center gap-2 text-xs">
-        <span className="rounded bg-primary/10 px-1.5 py-0.5 font-medium text-primary">{KIND_LABEL[s.kind]}</span>
-        {s.status === "deferred" && <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3" /> Deferred</span>}
-      </div>
-      {s.kind === "task" ? (
-        <div className="space-y-2">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Task title" />
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={priority} onValueChange={(v) => setPriority(v as never)}>
-              <SelectTrigger aria-label="Priority"><SelectValue /></SelectTrigger>
-              <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>)}</SelectContent>
-            </Select>
-            <SelectField label="Project" value={project} onChange={setProject} noneLabel="Choose a project" options={(projects.data ?? []).map((p) => ({ value: p.id, label: p.name }))} />
-          </div>
-        </div>
-      ) : <p className="text-sm">{s.evidence}</p>}
-      {s.kind === "task" && s.evidence && <p className="mt-2 text-xs text-muted-foreground">From: “{s.evidence}”</p>}
-      {s.duplicate_of_task_id && (
-        <p className="mt-2 flex items-start gap-1.5 text-xs text-warning"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-          Possible duplicate of <button className="underline" onClick={() => openTask(s.duplicate_of_task_id!)}>“{s.duplicate_of_title}”</button>.</p>
-      )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {s.duplicate_of_task_id && s.kind === "task"
-          ? <Button size="sm" variant="outline" onClick={() => approve(true)} disabled={!title.trim() || !project}><Check /> Create anyway</Button>
-          : <Button size="sm" onClick={() => approve()} disabled={s.kind === "task" && (!title.trim() || !project)}><Check /> {s.kind === "task" ? "Create task" : "Record update"}</Button>}
-        <Button size="sm" variant="ghost" onClick={() => act.mutate({ id: s.id, action: "reject" })}><X /> Reject</Button>
-        {s.status !== "deferred" && <Button size="sm" variant="ghost" onClick={() => act.mutate({ id: s.id, action: "defer" })}><Clock /> Later</Button>}
-      </div>
-    </li>
   );
 }

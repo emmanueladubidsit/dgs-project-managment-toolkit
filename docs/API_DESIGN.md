@@ -162,6 +162,36 @@ Messages are written in plain British English so the frontend can show them dire
 | `POST` | `/api/suggestions/{sid}/approve` | Approve |
 | `POST` | `/api/suggestions/{sid}/reject` | Reject |
 | `POST` | `/api/suggestions/{sid}/defer` | Defer |
+| `GET` | `/api/ai/status` | Status |
+| `PUT` | `/api/ai/settings` | Update Settings |
+| `POST` | `/api/ai/test` | Test Connection |
+| `GET` | `/api/ai/models` | Models |
+| `GET` | `/api/ai/usage` | Usage |
+| `POST` | `/api/ai/write` | Write |
+| `POST` | `/api/ai/ask` | Ask |
+| `POST` | `/api/ai/suggest` | Suggest |
+| `POST` | `/api/ai/breakdown/{task_id}` | Breakdown |
+| `POST` | `/api/ai/structure-project` | Structure Project |
+| `POST` | `/api/ai/research-draft` | Research Draft |
+| `POST` | `/api/ai/report-summary` | Report Summary |
+| `POST` | `/api/export` | Export Markdown |
+| `GET` | `/api/export/report/{report_id}` | Export Report |
+| `GET` | `/api/export/project/{project_id}/{kind}` | Export Project |
+| `GET` | `/api/export/knowledge/{item_id}` | Export Knowledge |
+| `GET` | `/api/connections` | List Connections |
+| `GET` | `/api/projects/{project_id}/connection` | Get Connection |
+| `PUT` | `/api/projects/{project_id}/connection` | Connect |
+| `DELETE` | `/api/projects/{project_id}/connection` | Disconnect |
+| `POST` | `/api/projects/{project_id}/sync` | Sync Now |
+| `GET` | `/api/projects/{project_id}/code-events` | Code Events |
+| `POST` | `/api/code-events/{event_id}/save-as-update` | Save Event As Update |
+| `GET` | `/api/claude/setup` | Setup |
+| `POST` | `/api/claude/events` | Claude Event |
+| `GET` | `/api/claude/context` | Mcp Context |
+| `POST` | `/api/claude/report` | Mcp Report |
+| `POST` | `/api/claude/update` | Mcp Update |
+| `GET` | `/api/privacy/names` | Get Names |
+| `PUT` | `/api/privacy/names` | Put Names |
 
 ## Uploads
 

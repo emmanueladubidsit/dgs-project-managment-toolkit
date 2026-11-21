@@ -9,9 +9,14 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
     "fastapi>=0.165.0",
+    "httpx>=0.28.1",
+    "mcp>=2.3.0",
     "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.3",
+    "python-docx>=1.2.0",
     "python-multipart>=0.0.34",
+    "python-pptx>=1.0.2",
+    "reportlab>=5.1.0",
     "sqlalchemy>=2.0",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -50,3 +55,4 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 
 [tool.ruff.lint.per-file-ignores]
 "app/seed_data.py" = ["E501", "E741"]  # prose content; short M/R/O constants aid readability
+"app/services/ai/features.py" = ["E501"]  # prompt prose

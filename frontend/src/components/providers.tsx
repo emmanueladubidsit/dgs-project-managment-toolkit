@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ApiError } from "@/lib/api";
+import { AIManualProvider } from "./ai";
 import { TaskSheetProvider } from "./task-sheet";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -25,7 +26,9 @@ export function Providers({ children }: { children: ReactNode }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={client}>
         <TooltipProvider delayDuration={200}>
-          <TaskSheetProvider>{children}</TaskSheetProvider>
+          <AIManualProvider>
+            <TaskSheetProvider>{children}</TaskSheetProvider>
+          </AIManualProvider>
           <Toaster richColors position="bottom-right" />
         </TooltipProvider>
       </QueryClientProvider>

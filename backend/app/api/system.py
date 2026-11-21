@@ -118,9 +118,21 @@ def system_info(db: Session = Depends(get_db)):
         "version": settings.app_version,
         "database": {"engine": f"PostgreSQL {pg_version}", "migration": revision, "size": size},
         "record_counts": counts,
-        "integrations": {
-            "ai": "not configured",
-            "claude_code": "not configured",
-            "voice": "not configured",
-        },
+        "integrations": _integrations(db),
+    }
+
+
+def _integrations(db: Session) -> dict:
+    from app.services.ai.provider import load_config
+    from app.services.transcription import get_provider
+
+    cfg = load_config(db)
+    ai = {"disabled": "off", "manual": "copy and paste with an AI chat"}.get(
+        cfg.provider, f"{cfg.model or 'model not set'} via {cfg.base_url or 'address not set'}"
+    )
+    voice_ok, _ = get_provider().available()
+    return {
+        "ai": ai,
+        "voice": "local Whisper" if voice_ok else "not installed (make voice)",
+        "claude_code": "not configured",
     }

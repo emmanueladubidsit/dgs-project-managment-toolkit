@@ -40,6 +40,33 @@ runs offline. Settings in `backend/.env`: `TRANSCRIPTION_PROVIDER` (`auto` / `no
 `WHISPER_MODEL` (`tiny`, `base`, `small`…; larger is more accurate and slower), `VOICE_RETENTION`
 (`delete` — default — or `keep`).
 
+### Optional: AI assistant (no new cost)
+
+Choose a mode in **Administration → AI assistant**:
+
+- **Free local model (recommended):** install [Ollama](https://ollama.com), then
+  `ollama pull llama3.1:8b` (≈ 5 GB; larger models such as `qwen3:14b` answer better and fit in
+  48 GB RAM). Pick the *Ollama* preset, **Save**, then **Test connection**. Private and offline.
+- **Organisation AI service:** pick *Organisation AI gateway / Azure OpenAI*, enter its
+  OpenAI-compatible address and model, and put the key in `backend/.env` as `AI_API_KEY=…`
+  (restart the API). Use only services your organisation approves for this data.
+- **Copy and paste:** works with any chat you already use, including a free ChatGPT account (which
+  has no API). The app shows the prompt; you paste the answer back.
+
+### Optional: Claude Code sync
+
+Connect each project's folder on its Codebase tab, then follow **Administration → Claude Code**:
+run the shown `claude mcp add --scope user dgs-workspace …` command once, and optionally merge the
+hooks snippet into `~/.claude/settings.json`. The workspace must be running (`make api`) for Claude
+to reach it. `SYNC_INTERVAL_SECONDS` (default 180, `0` to disable) controls background git sync.
+
+### Seeding your own projects
+
+`make seed-projects` loads project specs from `backend/data/seed/projects/*.json` — milestones,
+tasks (completed work keeps its real completion date), decisions, knowledge and read-only document
+indexes. The folder is git-ignored because it describes your own work. Re-running is safe: projects
+that already exist are skipped. The format is documented at the top of `backend/app/seed_projects.py`.
+
 ## Configuration
 
 - `backend/.env` (from `backend/.env.example`): `DATABASE_URL`, `TEST_DATABASE_URL`,
