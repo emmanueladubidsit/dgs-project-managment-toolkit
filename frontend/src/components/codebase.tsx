@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTime } from "@/lib/format";
+import { useClaudeSettings, useSaveClaudeSettings } from "@/lib/queries-library";
 import {
   useClaudeSetup, useCodeEvents, useConnect, useConnection, useDisconnect, usePrivacyNames, useSaveEventAsUpdate,
   useSavePrivacyNames, useSyncNow,
@@ -23,13 +24,25 @@ function ConnectForm({ projectId, current }: { projectId: string; current?: Conn
   const [path, setPath] = useState(current?.path ?? "");
   const [claude, setClaude] = useState(current?.accept_claude ?? true);
   const [auto, setAuto] = useState(current?.auto_sync ?? true);
+  const [patterns, setPatterns] = useState((current?.progress_patterns ?? []).join("\n"));
   const connect = useConnect(projectId);
   return (
-    <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); connect.mutate({ path: path.trim(), accept_claude: claude, auto_sync: auto }); }}>
+    <form className="space-y-3" onSubmit={(e) => {
+      e.preventDefault();
+      const list = patterns.split("\n").map((p) => p.trim()).filter(Boolean);
+      connect.mutate({ path: path.trim(), accept_claude: claude, auto_sync: auto, ...(current ? { progress_patterns: list } : {}) });
+    }}>
       <TextField label="Project folder (full path)" value={path} onChange={setPath} placeholder="/Users/you/Projects/my-app" hint="Tip: in Finder, select the folder and press ⌥⌘C to copy its path." />
       <label className="flex items-start gap-2 text-sm"><Checkbox checked={auto} onCheckedChange={(c) => setAuto(!!c)} className="mt-0.5" /> Check for new commits automatically every few minutes</label>
-      <label className="flex items-start gap-2 text-sm"><Checkbox checked={claude} onCheckedChange={(c) => setClaude(!!c)} className="mt-0.5" /> Accept progress reports from Claude Code sessions in this folder (they wait for your approval)</label>
-      <p className="text-xs text-muted-foreground">Read-only: the workspace runs read-only git commands (status, log) and never changes your files. It stores commit messages and changed file names — never source code, prompts, commands or author names.</p>
+      {current && (
+        <div className="space-y-1.5">
+          <label htmlFor="patterns" className="text-sm font-medium">Progress files to read ({current.progress_files_tracked} found)</label>
+          <Textarea id="patterns" rows={4} className="font-mono text-xs" value={patterns} onChange={(e) => setPatterns(e.target.value)} />
+          <p className="text-xs text-muted-foreground">One pattern per line, relative to the folder (e.g. <code>**/PROGRESS.md</code>). Status markers such as “Done”, “Closed”, ✅ or <code>- [x]</code> next to a task ID or title become suggestions.</p>
+        </div>
+      )}
+      <label className="flex items-start gap-2 text-sm"><Checkbox checked={claude} onCheckedChange={(c) => setClaude(!!c)} className="mt-0.5" /> Accept reports sent by Claude Code (optional tools — see Administration). They wait for your approval.</label>
+      <p className="text-xs text-muted-foreground">Local and read-only: the workspace runs read-only git commands (status, log) and reads progress files in this folder. Nothing is sent anywhere and no Claude Code settings are changed. It stores commit messages, changed file names and status changes — never source code, prompts or author names.</p>
       <Button type="submit" disabled={!path.trim() || connect.isPending}><FolderGit2 /> {current ? "Update" : "Connect folder"}</Button>
     </form>
   );
@@ -37,8 +50,8 @@ function ConnectForm({ projectId, current }: { projectId: string; current?: Conn
 
 function EventItem({ e }: { e: CodeEvent }) {
   const save = useSaveEventAsUpdate();
-  const icon = e.kind === "commit" ? <GitCommitHorizontal className="size-4" aria-label="Commit" /> : e.kind === "files" ? <FolderGit2 className="size-4" aria-label="File changes" /> : <Bot className="size-4" aria-label="Claude Code" />;
-  const label = { commit: "Commit", files: "Files changed", claude_session: "Claude Code session", claude_task: "Claude reported" }[e.kind];
+  const icon = e.kind === "progress_file" ? <FolderGit2 className="size-4" aria-label="Progress file" /> : e.kind === "commit" ? <GitCommitHorizontal className="size-4" aria-label="Commit" /> : e.kind === "files" ? <FolderGit2 className="size-4" aria-label="File changes" /> : <Bot className="size-4" aria-label="Claude Code" />;
+  const label = { commit: "Commit", files: "Files changed", claude_session: "Claude Code session", claude_task: "Claude reported", progress_file: "Progress file" }[e.kind];
   return (
     <li className="flex gap-3 py-2.5">
       <span className="mt-0.5 text-muted-foreground">{icon}</span>
@@ -49,7 +62,10 @@ function EventItem({ e }: { e: CodeEvent }) {
           {e.kind === "commit" && <> · <code>{e.ref.slice(0, 8)}</code>{e.detail.file_count ? ` · ${e.detail.file_count} file(s)` : ""}</>}
           {e.kind === "claude_session" && e.detail.turns ? ` · ${e.detail.turns} turn(s)${e.detail.ended ? " · ended" : ""}` : ""}
         </p>
-        {e.summary && e.kind === "claude_session" && (
+        {e.kind === "progress_file" && (e.detail.status_changes?.length || e.detail.checked?.length) ? (
+          <p className="mt-1 text-xs text-muted-foreground">{[...(e.detail.status_changes ?? []), ...(e.detail.checked ?? []).map((c) => `[x] ${c}`)].slice(0, 6).join(" · ")}</p>
+        ) : null}
+        {e.summary && (e.kind === "claude_session" || e.kind === "progress_file") && (
           <details className="mt-1 text-sm"><summary className="cursor-pointer text-xs text-primary">Latest summary from Claude</summary><p className="mt-1 whitespace-pre-wrap text-muted-foreground">{e.summary}</p></details>
         )}
         {e.detail.files && e.detail.files.length > 0 && (
@@ -57,7 +73,7 @@ function EventItem({ e }: { e: CodeEvent }) {
             <ul className="mt-1 font-mono text-xs text-muted-foreground">{e.detail.files.slice(0, 20).map((f) => <li key={f} className="truncate">{f}</li>)}</ul></details>
         )}
       </div>
-      {(e.kind === "claude_session" || e.kind === "commit") && (
+      {(e.kind === "claude_session" || e.kind === "commit" || (e.kind === "progress_file" && e.summary)) && (
         <Button size="xs" variant="ghost" className="shrink-0" onClick={() => save.mutate(e.id)}><Save /> Save as update</Button>
       )}
     </li>
@@ -79,7 +95,8 @@ export function CodebasePanel({ projectId }: { projectId: string }) {
             <ul className="list-disc space-y-1 pl-5 text-sm">
               <li>See commits and uncommitted changes as they happen.</li>
               <li>Commits that mention a task (for example “Fix ISSUE-0001”) suggest marking it done.</li>
-              <li>With Claude Code connected (<Link href="/admin" className="underline">Administration → Claude Code</Link>), session summaries and tasks Claude reports as done appear here for approval.</li>
+              <li>Progress files Claude Code keeps in the folder (PROGRESS.md, worklogs, issue indexes, backlogs) are read locally: items marked done become suggestions to approve.</li>
+              <li>Nothing to install, no Claude Code settings changed and nothing leaves this computer. Optional direct Claude tools are in <Link href="/admin" className="underline">Administration → Claude Code</Link>.</li>
             </ul>
           </Section>
         </div>
@@ -103,7 +120,7 @@ export function CodebasePanel({ projectId }: { projectId: string }) {
                 {c.is_git && <div className="flex justify-between"><dt className="text-muted-foreground">Uncommitted changes</dt><dd>{c.uncommitted_changes}</dd></div>}
                 <div className="flex justify-between"><dt className="text-muted-foreground">Last synced</dt><dd>{c.last_synced_at ? formatDateTime(c.last_synced_at) : "—"}</dd></div>
                 <div className="flex justify-between"><dt className="text-muted-foreground">Last activity</dt><dd>{c.last_activity_at ? formatDateTime(c.last_activity_at) : "—"}</dd></div>
-                <div className="flex justify-between"><dt className="text-muted-foreground">Claude reports</dt><dd>{c.accept_claude ? "Accepted" : "Off"}</dd></div>
+                <div className="flex justify-between"><dt className="text-muted-foreground">Progress files read</dt><dd>{c.progress_files_tracked}</dd></div>
                 {c.last_error && <p className="text-xs text-destructive">{c.last_error}</p>}
               </dl>
             </Section>
@@ -120,29 +137,42 @@ export function CodebasePanel({ projectId }: { projectId: string }) {
 // ---------------------------------------------------------------- Administration
 export function ClaudeSetupPanel() {
   const q = useClaudeSetup();
+  const settings = useClaudeSettings();
+  const saveSettings = useSaveClaudeSettings();
   const s = q.data;
+  const allowed = !!settings.data?.allow_outbound;
   return (
     <Section title="Claude Code" className="md:col-span-2">
-      {!s ? null : (
-        <div className="space-y-4 text-sm">
-          <p>Connect Claude Code so that sessions in your connected project folders can see each project&apos;s open tasks and report progress. Every report waits for your approval. Both steps use documented Claude Code features (MCP servers and hooks); the workspace does not read Claude&apos;s private session files.</p>
-          <div>
-            <p className="mb-1 font-medium">1. Register the workspace tools (once, for all projects) — run in a terminal:</p>
-            <div className="flex gap-2"><code className="block flex-1 overflow-x-auto rounded-md bg-muted p-2 text-xs whitespace-nowrap">{s.mcp_command}</code>
-              <Button size="sm" variant="outline" onClick={() => copy(s.mcp_command, "Command copied.")}><Copy /> Copy</Button></div>
-            <p className="mt-1 text-xs text-muted-foreground">Claude can then call <code>list_open_tasks</code>, <code>report_task_progress</code> and <code>record_update</code>. To prompt it to report without being asked, add the text below to the project&apos;s CLAUDE.md.</p>
-            <div className="mt-2 flex gap-2"><Textarea readOnly value={s.claude_md} rows={4} className="text-xs" aria-label="CLAUDE.md text" />
-              <Button size="sm" variant="outline" onClick={() => copy(s.claude_md)}><Copy /> Copy</Button></div>
-          </div>
-          <div>
-            <p className="mb-1 font-medium">2. Optional — automatic session summaries (hooks):</p>
-            <p className="mb-1 text-xs text-muted-foreground">Merge this into the <code>hooks</code> section of <code>~/.claude/settings.json</code> (all projects) or a project&apos;s <code>.claude/settings.local.json</code>. At the end of each Claude turn and session it sends the summary (secrets redacted, names masked) and any task Claude marks complete to this workspace. It never blocks Claude: if the workspace is not running, nothing happens.</p>
-            <div className="flex gap-2"><Textarea readOnly value={JSON.stringify(s.hook_settings, null, 2)} rows={8} className="font-mono text-xs" aria-label="Hook settings" />
-              <Button size="sm" variant="outline" onClick={() => copy(JSON.stringify(s.hook_settings, null, 2))}><Copy /> Copy</Button></div>
-          </div>
-          <p className="text-xs text-muted-foreground">Then connect each project&apos;s folder on its <strong>Codebase</strong> tab. The commands contain a private workspace token that stops other local programs posting fake progress; keep it to yourself.</p>
+      <div className="space-y-4 text-sm">
+        <div className="rounded-lg border border-success/40 bg-success/5 p-3">
+          <p className="font-medium">Recommended: local sync — nothing to configure</p>
+          <p className="mt-1">Connect each project&apos;s folder on its <strong>Codebase</strong> tab. The workspace reads, on this computer only, the commits and progress files that Claude Code already keeps in the folder (PROGRESS.md, worklogs, issue indexes, backlogs) and suggests task updates for your approval. No Claude Code settings are changed, nothing is installed and no workspace data is sent to Claude or anyone else.</p>
         </div>
-      )}
+        <details className="rounded-lg border p-3">
+          <summary className="cursor-pointer font-medium">Optional: direct Claude Code tools and hooks (check your organisation&apos;s policy first)</summary>
+          <div className="mt-3 space-y-4">
+            <p className="rounded-md bg-warning/10 px-3 py-2">These change your Claude Code configuration, and the task tools send this project&apos;s task list into Claude conversations (to Anthropic). Only use them if your organisation has approved Claude Code for this data.</p>
+            <label className="flex items-start gap-2"><Checkbox checked={allowed} onCheckedChange={(c) => saveSettings.mutate({ allow_outbound: !!c })} className="mt-0.5" />
+              <span>Allow Claude Code to read workspace tasks (off by default). When off, the tools cannot read anything, even if registered; reports sent to the workspace are still accepted for review.</span></label>
+            {s && (
+              <>
+                <div>
+                  <p className="mb-1 font-medium">Register the tools (run in a terminal):</p>
+                  <div className="flex gap-2"><code className="block flex-1 overflow-x-auto rounded-md bg-muted p-2 text-xs whitespace-nowrap">{s.mcp_command}</code>
+                    <Button size="sm" variant="outline" onClick={() => copy(s.mcp_command, "Command copied.")}><Copy /> Copy</Button></div>
+                  <p className="mt-1 text-xs text-muted-foreground">Remove again with <code>claude mcp remove dgs-workspace --scope user</code>.</p>
+                </div>
+                <div>
+                  <p className="mb-1 font-medium">Hooks for automatic session summaries (merge into <code>~/.claude/settings.json</code>):</p>
+                  <div className="flex gap-2"><Textarea readOnly value={JSON.stringify(s.hook_settings, null, 2)} rows={6} className="font-mono text-xs" aria-label="Hook settings" />
+                    <Button size="sm" variant="outline" onClick={() => copy(JSON.stringify(s.hook_settings, null, 2))}><Copy /> Copy</Button></div>
+                </div>
+                <p className="text-xs text-muted-foreground">These contain a private workspace token; keep them to yourself.</p>
+              </>
+            )}
+          </div>
+        </details>
+      </div>
     </Section>
   );
 }

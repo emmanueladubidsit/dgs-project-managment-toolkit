@@ -134,10 +134,13 @@ and checks for new commits every few minutes (or **Sync now**). A commit like �
 suggests marking that task done; suggestions appear under **Updates waiting for your review** on
 the tab and on the dashboard — **Apply**, **Reject** or **Later** (or **Apply all**).
 
-To let Claude Code take part, follow **Administration → Claude Code** once: run the `claude mcp add`
-command shown (Claude can then list a project's open tasks and report progress), optionally paste
-the CLAUDE.md text into a project, and optionally add the hooks snippet for automatic session
-summaries. Add people's names under **Administration → Privacy** to have them masked.
+Claude Code progress is picked up with nothing to set up: the workspace reads the progress files
+in the folder (PROGRESS.md, issue indexes, worklogs, backlogs, CHANGELOG) on this computer only.
+Items marked done (“Done”, “Closed”, ✅, `- [x]`) next to a task ID or title become suggestions.
+Edit the list of files under **Change settings → Progress files to read**. Optional direct Claude
+tools are under **Administration → Claude Code**; they change Claude Code's settings and share
+task data with Claude, so use them only if your organisation allows it (task sharing is off by
+default). Add people's names under **Administration → Privacy** to have them masked.
 
 ## 14. Administration
 

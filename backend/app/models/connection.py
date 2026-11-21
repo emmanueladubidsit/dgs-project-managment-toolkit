@@ -28,6 +28,9 @@ class ProjectConnection(IdMixin, TimestampMixin, Base):
     last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_error: Mapped[str | None] = mapped_column(Text)
+    # Local progress records read from the folder (globs relative to it), and their last state.
+    progress_patterns: Mapped[list] = mapped_column(JSONB, default=list)
+    file_state: Mapped[dict] = mapped_column(JSONB, default=dict)
 
     project = relationship("Project", lazy="joined")
 

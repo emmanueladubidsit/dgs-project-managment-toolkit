@@ -419,9 +419,10 @@ export interface Connection {
   id: string; project_id: string; project_name: string; path: string; available: boolean; is_git: boolean;
   accept_claude: boolean; auto_sync: boolean; branch: string | null; head: string | null; uncommitted_changes: number;
   last_synced_at: string | null; last_activity_at: string | null; last_error: string | null;
+  progress_patterns: string[]; progress_files_tracked: number;
 }
 export interface CodeEvent {
-  id: string; kind: "commit" | "claude_session" | "claude_task" | "files"; ref: string; title: string;
-  summary: string | null; detail: { files?: string[]; file_count?: number; branch?: string; turns?: number; ended?: boolean; status?: string }; occurred_at: string;
+  id: string; kind: "commit" | "claude_session" | "claude_task" | "files" | "progress_file"; ref: string; title: string;
+  summary: string | null; detail: { files?: string[]; file_count?: number; branch?: string; turns?: number; ended?: boolean; status?: string; file?: string; status_changes?: string[]; checked?: string[] }; occurred_at: string;
 }
 export interface ClaudeSetup { token: string; hook_settings: Record<string, unknown>; mcp_command: string; claude_md: string }

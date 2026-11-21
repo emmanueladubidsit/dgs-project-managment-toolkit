@@ -187,7 +187,9 @@ Messages are written in plain British English so the frontend can show them dire
 | `POST` | `/api/code-events/{event_id}/save-as-update` | Save Event As Update |
 | `GET` | `/api/claude/setup` | Setup |
 | `POST` | `/api/claude/events` | Claude Event |
-| `GET` | `/api/claude/context` | Mcp Context |
+| `GET` | `/api/claude/settings` | Claude Settings (task sharing, off by default) |
+| `PUT` | `/api/claude/settings` | Save Claude Settings |
+| `GET` | `/api/claude/context` | Mcp Context (403 unless sharing is allowed) |
 | `POST` | `/api/claude/report` | Mcp Report |
 | `POST` | `/api/claude/update` | Mcp Update |
 | `GET` | `/api/privacy/names` | Get Names |

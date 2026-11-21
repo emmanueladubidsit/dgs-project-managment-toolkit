@@ -4,7 +4,7 @@ Testing is part of every increment. Current status: **all suites passing**.
 
 | Suite | Tool | Command | Count |
 | --- | --- | --- | --- |
-| Backend API, rules and calculations | pytest + FastAPI TestClient | `cd backend && uv run pytest` | 99 |
+| Backend API, rules and calculations | pytest + FastAPI TestClient | `cd backend && uv run pytest` | 102 |
 | Frontend components and helpers | Vitest + Testing Library (jsdom) | `cd frontend && npm test` | 21 |
 | End-to-end user journeys | Playwright (Chromium) | `cd frontend && npx playwright test` | 9 |
 
@@ -48,6 +48,10 @@ import against a real temporary repository (no author names stored, no suggestio
 commit-to-task matching and approval with history, the folder left untouched, hook token checks,
 Stop summaries with secret redaction and name masking, subagent and unknown-folder handling,
 TaskCompleted matching and fallback, MCP context/report/update endpoints, and masked exports.
+Local progress files: detection in a temporary folder (decoys in `node_modules` and `.env`
+ignored), first sync suggesting only done items, later edits suggesting in-progress and ticked
+items, worklog events with secrets redacted, unchanged re-syncs suggesting nothing, pattern
+validation, README prose never changing a status, and task sharing to Claude off by default.
 The MCP server was also exercised over stdio with an MCP client (as Claude Code launches it), and
 the generated hook command was run with a Stop payload.
 

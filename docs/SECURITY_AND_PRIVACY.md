@@ -28,7 +28,8 @@ the local network. Do not change these bindings until authentication exists.
 | AI logging | `ai_interactions` stores metadata only (feature, model, sizes, duration, error) — never prompts or answers. |
 | Exports | Generated on demand from stored data and streamed to the browser; nothing is written to disk on the server. |
 | Connected codebases | Read-only: fixed-argument git commands (`rev-parse`, `status`, `log`) with a timeout and no shell; nothing in the folder is changed (tested). Stores commit messages and changed file names only — never source code or author names. |
-| Claude Code intake | Hook and MCP endpoints require a private workspace token; summaries are secret-redacted and name-masked before storage; subagent events ignored; Claude's session transcripts are never read. Every task change from Claude or git is a suggestion awaiting approval. |
+| Claude Code progress (default) | Read locally and read-only from progress files in the connected folder (ADR 0009); no Claude Code configuration is changed and nothing is sent anywhere. Secret files skipped, symlinks not followed, size and depth limited. |
+| Claude Code tools (optional) | Off unless the user registers them and their organisation allows it. Task data to Claude (`/api/claude/context`) is disabled by default and privacy-cleaned when enabled. Hook and MCP endpoints require a private workspace token; summaries are secret-redacted and name-masked before storage; subagent events ignored; Claude's session transcripts are never read. Every task change from Claude or git is a suggestion awaiting approval. |
 | Named individuals | Administration → Privacy lists names to replace with roles in Claude reports, commit messages, AI prompts and exports. Seeded project data uses roles, not names. |
 | AI honesty | Unverified knowledge is labelled; AI-only writing outputs are refused rather than faked; voice/text suggestions change nothing until approved. |
 
@@ -43,8 +44,8 @@ the local network. Do not change these bindings until authentication exists.
 
 - AI output is **untrusted until reviewed**: it will only ever create suggestions or drafts, shown
   with their sources, and never be presented as verified fact.
-- Claude Code capture will be opt-in, will not store full transcripts by default, and will filter
-  secrets, tokens and environment variables.
+- Claude Code capture is local by default (progress files); direct tools are opt-in, transcripts
+  are never read, and secrets, tokens and names are filtered.
 
 ## Known gaps
 

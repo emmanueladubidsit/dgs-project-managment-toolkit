@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from app.models import CodeEvent, ProjectConnection, Suggestion, Task
 from app.models.enums import TaskStatus
 from app.models.voice import SuggestionKind, SuggestionStatus
-from app.services import files, privacy, text_tools
+from app.services import files, privacy, progress_files, text_tools
 from app.services.tasks import DONE, now
 
 log = logging.getLogger("app.codebase")
@@ -156,7 +156,13 @@ def _event(db: Session, conn: ProjectConnection, kind: str, ref: str, **fields) 
 
 def sync_connection(db: Session, conn: ProjectConnection) -> dict:
     """Refresh git status and record new commits. Returns counts for the caller."""
-    result = {"new_commits": 0, "suggestions": 0, "uncommitted_changes": 0, "files_changed": 0}
+    result = {
+        "new_commits": 0,
+        "suggestions": 0,
+        "uncommitted_changes": 0,
+        "files_changed": 0,
+        "progress_files": 0,
+    }
     if not Path(conn.path).is_dir():
         conn.last_error = "The folder is no longer available at this path."
         conn.last_synced_at = now()
@@ -170,7 +176,10 @@ def sync_connection(db: Session, conn: ProjectConnection) -> dict:
                 conn.head = git(conn.path, "rev-parse", "HEAD").strip()[:64]
             except GitError:
                 conn.head = None  # repository without commits yet
-            status = git(conn.path, "status", "--porcelain")
+            # A folder inside a larger repository only sees its own commits and changes.
+            top = git(conn.path, "rev-parse", "--show-toplevel").strip()
+            scope = [] if Path(top).resolve() == Path(conn.path).resolve() else ["--", "."]
+            status = git(conn.path, "status", "--porcelain", *scope)
             conn.uncommitted_changes = len([x for x in status.splitlines() if x.strip()])
             result["uncommitted_changes"] = conn.uncommitted_changes
             if conn.head:
@@ -187,6 +196,7 @@ def sync_connection(db: Session, conn: ProjectConnection) -> dict:
                     "--date=iso-strict",
                     "--pretty=format:%x1e%H%x1f%cI%x1f%s",
                     "--name-only",
+                    *scope,
                 )
                 for block in raw.split("\x1e"):
                     if not block.strip():
@@ -242,6 +252,22 @@ def sync_connection(db: Session, conn: ProjectConnection) -> dict:
                     occurred_at=newest,
                 )
                 conn.last_activity_at = newest
+        pf = progress_files.sync_progress_files(
+            db,
+            conn,
+            lambda text, evidence, status: suggest_task_updates(
+                db,
+                conn.project_id,
+                text,
+                evidence,
+                "progress-file",
+                "progress_file",
+                None,
+                force_status=status,
+            ),
+        )
+        result["progress_files"] = pf["progress_files"]
+        result["suggestions"] += pf["suggestions"]
         conn.last_error = None
     except GitError as e:
         conn.last_error = str(e)

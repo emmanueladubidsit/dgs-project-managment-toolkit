@@ -77,7 +77,9 @@ Then open **http://localhost:3010**.
   commits, changed files and uncommitted changes appear on the project's Codebase tab; commits
   that mention a task suggest marking it done. Claude Code can list a project's open tasks and
   report progress through the workspace MCP server, and optional hooks record session summaries.
-  Every status change waits for your approval ([ADR 0008](docs/DECISIONS/0008-claude-code-sync-via-mcp-and-hooks.md)).
+  Every status change waits for your approval ([ADR 0008](docs/DECISIONS/0008-claude-code-sync-via-mcp-and-hooks.md)). Claude progress is read
+  locally from progress files in the folder — no Claude Code configuration changes
+  ([ADR 0009](docs/DECISIONS/0009-local-progress-file-sync.md)).
 - **Privacy** — named individuals are masked as roles and secrets redacted in Claude reports,
   commit messages, AI prompts and exports.
 - **Global search** (⌘K / Ctrl+K) across projects, tasks, knowledge, methodologies, documents,

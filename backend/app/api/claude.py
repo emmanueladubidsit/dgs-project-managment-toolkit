@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Body, Depends, Header, Query, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,7 +21,7 @@ from app.models import CodeEvent, Project, ProjectConnection, Task, WorkLog
 from app.models.enums import WorkLogKind
 from app.models.system import SystemSetting
 from app.models.voice import Suggestion, SuggestionKind
-from app.services import codebase, files, privacy
+from app.services import codebase, files, privacy, progress_files
 from app.services.tasks import DONE
 
 router = APIRouter(tags=["claude"])
@@ -53,6 +53,25 @@ class ConnectionIn(BaseModel):
     path: str = Field(min_length=1, max_length=1000)
     accept_claude: bool = True
     auto_sync: bool = True
+    # Globs (relative to the folder) for local progress records; None = detect automatically.
+    progress_patterns: list[str] | None = Field(default=None, max_length=30)
+
+    @field_validator("progress_patterns")
+    @classmethod
+    def _patterns(cls, v):
+        if v is None:
+            return v
+        out = []
+        for p in v:
+            p = p.strip()
+            if not p:
+                continue
+            if p.startswith("/") or ".." in p.split("/") or len(p) > 200:
+                raise ValueError(
+                    "Progress file patterns must be relative to the folder, without '..'."
+                )
+            out.append(p)
+        return out
 
 
 class ConnectionOut(BaseModel):
@@ -70,6 +89,8 @@ class ConnectionOut(BaseModel):
     last_synced_at: str | None
     last_activity_at: str | None
     last_error: str | None
+    progress_patterns: list[str]
+    progress_files_tracked: int
 
 
 class EventOut(BaseModel):
@@ -99,6 +120,8 @@ def _out(c: ProjectConnection) -> ConnectionOut:
         last_synced_at=iso(c.last_synced_at),
         last_activity_at=iso(c.last_activity_at),
         last_error=c.last_error,
+        progress_patterns=c.progress_patterns or [],
+        progress_files_tracked=len(c.file_state or {}),
     )
 
 
@@ -142,8 +165,19 @@ def connect(project_id: uuid.UUID, body: ConnectionIn, db: Session = Depends(get
         for ev in db.scalars(select(CodeEvent).where(CodeEvent.connection_id == c.id)):
             db.delete(ev)  # history belonged to the previous folder
         c.head = c.branch = c.last_synced_at = c.last_activity_at = None
+    is_new_folder = c is None or c.path != real
     c = c or ProjectConnection(project_id=project_id, path=real)
+    if is_new_folder:
+        c.file_state = {}
     c.path, c.accept_claude, c.auto_sync = real, body.accept_claude, body.auto_sync
+    if body.progress_patterns is not None:
+        if body.progress_patterns != (c.progress_patterns or []):
+            c.file_state = {}  # re-baseline when the watched files change
+        c.progress_patterns = body.progress_patterns
+    elif is_new_folder:
+        # All standard patterns: ones that match nothing yet (e.g. a worklog folder that is
+        # still empty) start working as soon as such files appear.
+        c.progress_patterns = list(progress_files.DEFAULT_PATTERNS)
     db.add(c)
     db.commit()
     codebase.sync_connection(db, c)
@@ -277,8 +311,41 @@ def _for_dir(db: Session, project_dir: str) -> ProjectConnection:
     return c
 
 
+def outbound_allowed(db: Session) -> bool:
+    row = db.get(SystemSetting, "claude")
+    return bool((row.value or {}).get("allow_outbound")) if row else False
+
+
+class ClaudeSettingsIn(BaseModel):
+    allow_outbound: bool
+
+
+@router.get("/claude/settings")
+def claude_settings(db: Session = Depends(get_db)):
+    return {"allow_outbound": outbound_allowed(db)}
+
+
+@router.put("/claude/settings")
+def update_claude_settings(body: ClaudeSettingsIn, db: Session = Depends(get_db)):
+    row = db.get(SystemSetting, "claude") or SystemSetting(key="claude", value={})
+    row.value = {**(row.value or {}), "allow_outbound": body.allow_outbound}
+    db.add(row)
+    db.commit()
+    return {"allow_outbound": body.allow_outbound}
+
+
 @router.get("/claude/context", dependencies=[Depends(require_token)])
 def mcp_context(project_dir: str, db: Session = Depends(get_db)):
+    """Task list for Claude Code. Off by default: data returned here becomes part of a Claude
+    conversation (it leaves this computer), so it must be explicitly allowed, and it is passed
+    through the privacy filter (names masked, secrets redacted)."""
+    if not outbound_allowed(db):
+        raise AppError(
+            403,
+            "outbound_disabled",
+            "Sharing workspace tasks with Claude Code is turned off "
+            "(Administration → Claude Code). Reports from Claude are still accepted.",
+        )
     c = _for_dir(db, project_dir)
     tasks = db.scalars(
         select(Task)
@@ -287,16 +354,17 @@ def mcp_context(project_dir: str, db: Session = Depends(get_db)):
         )
         .order_by(Task.position)
     )
+    clean = lambda v, n=500: privacy.clean(db, v, n)  # noqa: E731
     return {
-        "project": c.project.name,
+        "project": clean(c.project.name, 200),
         "open_tasks": [
             {
                 "id": str(t.id),
-                "title": t.title,
+                "title": clean(t.title, 300),
                 "status": t.status.value,
                 "priority": t.priority.value,
-                "milestone": t.milestone.title if t.milestone else None,
-                "acceptance_criteria": t.acceptance_criteria,
+                "milestone": clean(t.milestone.title, 200) if t.milestone else None,
+                "acceptance_criteria": clean(t.acceptance_criteria),
             }
             for t in tasks
         ][:150],

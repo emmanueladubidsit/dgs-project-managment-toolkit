@@ -55,10 +55,10 @@ Choose a mode in **Administration → AI assistant**:
 
 ### Optional: Claude Code sync
 
-Connect each project's folder on its Codebase tab, then follow **Administration → Claude Code**:
-run the shown `claude mcp add --scope user dgs-workspace …` command once, and optionally merge the
-hooks snippet into `~/.claude/settings.json`. The workspace must be running (`make api`) for Claude
-to reach it. `SYNC_INTERVAL_SECONDS` (default 180, `0` to disable) controls background git sync.
+Connect each project's folder on its Codebase tab — that is all. Sync reads git and the progress
+files Claude Code keeps in the folder (PROGRESS.md, `.claude/issues`, worklogs, backlogs) locally;
+no Claude Code configuration is changed (ADR 0009). Direct Claude tools (MCP command and hooks) are
+optional under **Administration → Claude Code**; use them only if your organisation allows it. `SYNC_INTERVAL_SECONDS` (default 180, `0` to disable) controls background git sync.
 
 ### Seeding your own projects
 

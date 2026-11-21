@@ -18,6 +18,17 @@ Last updated: **21 November 2026** (second session). Update this file at the end
 
 ## Session log
 
+### 21 November 2026 (fifth session) — policy-safe local Claude sync
+
+- Claude Code progress now comes from progress files already in each connected folder, read
+  locally and read-only (ADR 0009). No Claude Code configuration is touched and nothing is sent
+  anywhere; the MCP/hooks route is optional, behind a policy warning, with task sharing off.
+- Git sync scoped to the connected subfolder (it previously showed the whole repository).
+- Fixed: “not started” read as progress; README prose changing a status; duplicate-event error
+  when re-reading files.
+- Real folders: 38 progress files (AI Risk Assessment Toolkit), 86 (Agent Evaluation Harness).
+- Tests: 102 backend, 21 frontend, 9 end-to-end — all passing.
+
 ### 21 November 2026 (fourth session) — seeded projects, privacy and Claude Code sync
 
 - Seeded three real projects from their own records (git-ignored specs, `make seed-projects`);
@@ -88,8 +99,8 @@ Delivered:
 **Set up a model** — install Ollama and pull a model (or configure the organisation service),
 then use *Test connection* in Administration.
 
-**Connect Claude Code** — run the `claude mcp add` command from Administration → Claude Code, and
-optionally add the hooks snippet; then work in a connected folder and review reports.
+**Claude Code progress** — nothing to set up: keep working with Claude in a connected folder and
+review the suggestions. Direct Claude tools stay optional, subject to organisational policy.
 
 ## Backlog and known limitations
 

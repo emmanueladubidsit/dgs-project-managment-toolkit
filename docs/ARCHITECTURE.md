@@ -34,6 +34,7 @@ move to another host later without changing the frontend.
 | `services/ai/provider.py` | AI provider modes (off / OpenAI-compatible / copy-and-paste), config, usage log ([ADR 0007](DECISIONS/0007-ai-assistant-without-new-costs.md)) |
 | `services/ai/context.py` | Grounded, size-limited workspace context with the list of sources used |
 | `services/ai/features.py` | Prompts and JSON parsing for each AI feature |
+| `services/progress_files.py` | Local, read-only progress-file reading for Claude progress ([ADR 0009](DECISIONS/0009-local-progress-file-sync.md)) |
 | `services/codebase.py` | Read-only git sync, Claude hook handling and task matching ([ADR 0008](DECISIONS/0008-claude-code-sync-via-mcp-and-hooks.md)) |
 | `services/privacy.py` | Name masking and secret redaction for text entering or leaving the workspace |
 | `mcp_server.py` | MCP server for Claude Code (`list_open_tasks`, `report_task_progress`, `record_update`) |

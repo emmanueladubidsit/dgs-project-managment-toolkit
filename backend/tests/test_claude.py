@@ -188,15 +188,23 @@ def test_task_completed_hook_matches_tasks(client, project, make_task, repo, tok
     assert client.get(f"/api/tasks/{t['id']}").json()["status"] == "todo"
 
 
-def test_mcp_endpoints(client, project, make_task, repo, token):
-    t = make_task(title="Add rate limiting", acceptance_criteria="429 after 100 requests")
+def test_mcp_context_is_off_by_default_and_masked(client, project, make_task, repo, token):
+    client.put("/api/privacy/names", json=[{"name": "Jane Doe", "replacement": "the reviewer"}])
+    t = make_task(
+        title="Add rate limiting for Jane Doe", acceptance_criteria="429 after 100 requests"
+    )
     make_task(title="Done already", status="completed")
     connect(client, project, repo)
     h = {"X-Workspace-Token": token}
-    ctx = client.get("/api/claude/context", params={"project_dir": str(repo)}, headers=h).json()
-    assert ctx["project"] == "Test project" and [x["title"] for x in ctx["open_tasks"]] == [
-        "Add rate limiting"
-    ]
+    params = {"project_dir": str(repo)}
+    r = client.get("/api/claude/context", params=params, headers=h)
+    assert r.status_code == 403 and r.json()["error"]["code"] == "outbound_disabled"
+    assert client.get("/api/claude/settings").json() == {"allow_outbound": False}
+    client.put("/api/claude/settings", json={"allow_outbound": True})
+    ctx = client.get("/api/claude/context", params=params, headers=h).json()
+    assert [x["title"] for x in ctx["open_tasks"]] == ["Add rate limiting for the reviewer"]
+    # Inbound reports never need outbound sharing
+    client.put("/api/claude/settings", json={"allow_outbound": False})
     r = client.post(
         "/api/claude/report",
         headers=h,
@@ -207,7 +215,7 @@ def test_mcp_endpoints(client, project, make_task, repo, token):
             "note": "PR opened",
         },
     ).json()
-    assert r["matched_tasks"] == ["Add rate limiting"]
+    assert len(r["matched_tasks"]) == 1
     s = client.get("/api/suggestions").json()[0]
     assert s["payload"]["status"] == "in_review" and "PR opened" in s["evidence"]
     client.post(
@@ -216,6 +224,7 @@ def test_mcp_endpoints(client, project, make_task, repo, token):
         json={"project_dir": str(repo), "summary": "Chose Redis", "kind": "decision"},
     )
     assert any(x["kind"] == "decision" for x in client.get("/api/suggestions").json())
+    client.put("/api/claude/settings", json={"allow_outbound": True})
     assert (
         client.get("/api/claude/context", params={"project_dir": "/nope"}, headers=h).status_code
         == 404
@@ -224,10 +233,7 @@ def test_mcp_endpoints(client, project, make_task, repo, token):
         f"/api/projects/{project['id']}/connection",
         json={"path": str(repo), "accept_claude": False},
     )
-    assert (
-        client.get("/api/claude/context", params={"project_dir": str(repo)}, headers=h).status_code
-        == 403
-    )
+    assert client.get("/api/claude/context", params=params, headers=h).status_code == 403
 
 
 def test_setup_and_disconnect(client, project, repo, token):
@@ -254,3 +260,105 @@ def test_privacy_masks_exports(client):
     )
     text = "\n".join(x.text for x in doc.paragraphs)
     assert "Jane" not in text and "Reviewer (lead)" in text
+
+
+# ---------------------------------------------------------------- local progress files
+FOLDER = Path(__file__).parent / "_tmp_progress"
+
+
+@pytest.fixture
+def progress_folder():
+    shutil.rmtree(FOLDER, ignore_errors=True)
+    (FOLDER / ".claude" / "issues").mkdir(parents=True)
+    (FOLDER / ".claude" / "history" / "worklog").mkdir(parents=True)
+    (FOLDER / "node_modules" / "x").mkdir(parents=True)
+    (FOLDER / "PROGRESS.md").write_text(
+        "# Progress\n\n| Item | Status |\n|---|---|\n| AEH-001 CI on hosted runner | ✅ Done |\n"
+        "| AEH-002 supply chain | Not started |\n\n- [ ] Write the release notes\n"
+    )
+    (FOLDER / ".claude" / "issues" / "INDEX.md").write_text(
+        "| ID | Title | Status |\n|---|---|---|\n| ISSUE-0003 | llm module | Open |\n"
+    )
+    (FOLDER / ".claude" / "issues" / "ISSUE-0004-thresholds.md").write_text(
+        "# Thresholds\n\nStatus: closed\n"
+    )
+    (FOLDER / "node_modules" / "x" / "PROGRESS.md").write_text("| AEH-002 | Done |")  # ignored
+    (FOLDER / ".env").write_text("SECRET=1")
+    yield FOLDER
+    shutil.rmtree(FOLDER, ignore_errors=True)
+
+
+def test_progress_files_detected_and_synced_locally(client, project, make_task, progress_folder):
+    a1 = make_task(title="AEH-001: CI on a hosted runner")
+    a2 = make_task(title="AEH-002: supply-chain controls")
+    i3 = make_task(title="ISSUE-0003: llm_provider module missing")
+    i4 = make_task(title="ISSUE-0004: appetite thresholds differ")
+    notes = make_task(title="Write the release notes")
+    c = connect(client, project, progress_folder).json()
+    # This folder sits inside the app's own repository: git is scoped to the folder only.
+    assert {"**/PROGRESS.md", "**/.claude/issues/*.md"} <= set(c["progress_patterns"])
+    assert c["progress_files_tracked"] == 3  # node_modules and .env ignored
+
+    # First sync: only "done in the file, open in the workspace" becomes a suggestion
+    sugg = {
+        s["payload"]["task_id"]: s["payload"]["status"]
+        for s in client.get("/api/suggestions").json()
+    }
+    assert sugg == {a1["id"]: "completed", i4["id"]: "completed"}
+
+    # Later edits: newly in-progress items, newly ticked checklist items and new worklogs
+    (progress_folder / "PROGRESS.md").write_text(
+        "# Progress\n\n| Item | Status |\n|---|---|\n| AEH-001 CI on hosted runner | ✅ Done |\n"
+        "| AEH-002 supply chain | In progress |\n\n- [x] Write the release notes\n"
+    )
+    (progress_folder / ".claude" / "history" / "worklog" / "2026-11-22-notes.md").write_text(
+        "# Added rate limiting\n\n"
+        "Implemented limits; key sk-ant-abcdefghijklmnopqrstuv0 used in tests."
+    )
+    r = client.post(f"/api/projects/{project['id']}/sync").json()
+    assert r["suggestions"] == 2
+    sugg = {
+        s["payload"]["task_id"]: s["payload"]["status"]
+        for s in client.get("/api/suggestions").json()
+    }
+    assert sugg[a2["id"]] == "in_progress" and sugg[notes["id"]] == "completed"
+    assert i3["id"] not in sugg  # "Open" never suggests anything
+    events = client.get(f"/api/projects/{project['id']}/code-events?kind=progress_file").json()
+    titles = [e["title"] for e in events]
+    assert "New worklog: Added rate limiting" in titles and any(
+        t.startswith("Updated PROGRESS.md") for t in titles
+    )
+    worklog = next(e for e in events if e["title"].startswith("New worklog"))
+    assert "sk-ant" not in worklog["summary"] and "[redacted]" in worklog["summary"]
+
+    # Unchanged files produce nothing new; files are never modified
+    assert client.post(f"/api/projects/{project['id']}/sync").json()["suggestions"] == 0
+    assert (progress_folder / ".env").read_text() == "SECRET=1"
+
+
+def test_progress_pattern_validation(client, project, progress_folder):
+    r = client.put(
+        f"/api/projects/{project['id']}/connection",
+        json={"path": str(progress_folder), "progress_patterns": ["../outside/*.md"]},
+    )
+    assert r.status_code == 422
+    r = client.put(
+        f"/api/projects/{project['id']}/connection",
+        json={"path": str(progress_folder), "progress_patterns": ["PROGRESS.md"]},
+    )
+    assert (
+        r.json()["progress_patterns"] == ["PROGRESS.md"] and r.json()["progress_files_tracked"] == 1
+    )
+
+
+def test_prose_and_readme_files_never_change_status():
+    from app.services.progress_files import SKIP_NAMES, parse
+
+    prose = "- IDs start at `ISSUE-0001` and are never reused, even after an issue is closed."
+    assert parse(prose, "notes.md")["ids"] == {}
+    assert parse("We fixed AEH-009 last week.", "notes.md")["ids"] == {}
+    assert SKIP_NAMES.match("README.md") and SKIP_NAMES.match("_template.md")
+    found = parse(
+        "- ISSUE-0003: closed\n## AEH-002 — In progress\n| AEH-005 | Not started |", "x.md"
+    )
+    assert found["ids"] == {"ISSUE-0003": "completed", "AEH-002": "in_progress", "AEH-005": "todo"}
