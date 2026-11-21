@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 
 /** Confirmation for destructive actions. With `typeToConfirm`, the user must type that text. */
 export function ConfirmDialog({
-  trigger, title, description, confirmLabel = "Delete", typeToConfirm, onConfirm,
+  trigger, title, description, confirmLabel = "Delete", typeToConfirm, onConfirm, destructive = true,
 }: {
   trigger: ReactNode;
   title: string;
@@ -17,6 +17,7 @@ export function ConfirmDialog({
   confirmLabel?: string;
   typeToConfirm?: string;
   onConfirm: (typed: string) => void;
+  destructive?: boolean;
 }) {
   const [typed, setTyped] = useState("");
   const blocked = typeToConfirm !== undefined && typed !== typeToConfirm;
@@ -42,7 +43,7 @@ export function ConfirmDialog({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             disabled={blocked}
-            className="bg-destructive text-white hover:bg-destructive/90"
+            className={destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
             onClick={() => onConfirm(typed)}
           >
             {confirmLabel}

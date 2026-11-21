@@ -4,8 +4,8 @@ A local-first workspace for managing projects from idea to maintenance: projects
 milestones, tasks and subtasks; daily, weekly and monthly planning; work logs; and reports
 generated only from what you have actually recorded.
 
-It works fully **without any AI service or API key**. AI, voice and Claude Code integrations are
-planned as optional add-ons (see [the roadmap](docs/IMPLEMENTATION_ROADMAP.md)).
+It works fully **without any AI service or API key**. Voice transcription runs locally (optional);
+AI writing and Claude Code integrations are planned add-ons (see [the roadmap](docs/IMPLEMENTATION_ROADMAP.md)).
 
 ## Quick start
 
@@ -24,6 +24,8 @@ Then open **http://localhost:3010**.
 | --- | --- |
 | `make db` | Start PostgreSQL (Docker, port 5433, persistent volume) |
 | `make migrate` | Apply database migrations |
+| `make seed` | Load the 13 starter methodologies (safe to re-run; never overwrites) |
+| `make voice` | Optional: install local Whisper transcription |
 | `make test` | Backend + frontend unit/component tests |
 | `make e2e` | Browser end-to-end journey (needs `make api` and `make web-prod` running) |
 | `make check` | Lint and type-check everything |
@@ -47,6 +49,24 @@ Then open **http://localhost:3010**.
 - **Work logs and reports** — progress updates, decisions, blockers, research and unplanned work;
   daily, weekly and project reports (stakeholder or technical) that you can edit, copy, download
   and save.
+- **Knowledge & Research** — research, troubleshooting guides, runbooks, decisions, lessons learned,
+  templates and more, with structured templates, explicit verification status, version history and
+  restore, provenance (origin project) and reuse links, task links, evidence/supersedes
+  relationships, and one-click promotion of a recorded decision or research update.
+- **Methodologies & Playbooks** — a library of 13 starter methodologies (stages, activities,
+  expected outputs, deliverables classed mandatory/recommended/optional/not applicable), with
+  versions, publish/deprecate, duplicate-to-adapt, **create a playbook from a past project**, and
+  adoption into a project (whole or selected stages) that creates milestones and tasks without
+  duplicates and tracks deliverables.
+- **Documents & Artefacts** — register project folders (read-only), scan and index files where they
+  live, previews of text files, links and short notes, categories, project and task links. Paths
+  are confined to registered folders and secret files are never listed or read.
+- **Voice & Writing** — record/pause/resume/stop/play back in the browser; local Whisper
+  transcription with audio deleted after transcription by default; editable transcripts;
+  rule-based cleaning, structuring, meeting/research notes, daily updates and task breakdowns;
+  suggested tasks, blockers and decisions that you approve, reject or defer, with duplicate checks.
+- **Global search** (⌘K / Ctrl+K) across projects, tasks, knowledge, methodologies, documents,
+  updates and notes.
 - **Administration** — health, database and record diagnostics, backup guidance.
 
 ## Documentation

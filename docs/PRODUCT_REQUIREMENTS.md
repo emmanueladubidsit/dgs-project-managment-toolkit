@@ -41,9 +41,9 @@ Multi-user support is a future consideration, not an MVP requirement.
   ✅ edit and copy reports (also download and save).
 
 ### Knowledge
-- ⏳ Create research and knowledge records, categorise, associate with projects, search, create a
-  reusable guide or template — **Phase 6**. Interim: research and decisions can be recorded as
-  work logs, which appear on the project and in reports.
+- ✅ Create research and knowledge records · ✅ categorise them · ✅ associate with projects ·
+  ✅ search previously captured knowledge (list search and global search) · ✅ create a reusable
+  guide or template (and methodologies/playbooks, including from a past project).
 
 ### General usability
 - ✅ Application starts · ✅ persistent database · ✅ frontend communicates with backend ·

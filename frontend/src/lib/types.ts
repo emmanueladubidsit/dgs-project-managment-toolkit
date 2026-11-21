@@ -255,3 +255,161 @@ export interface Report extends ReportDraft {
   created_at: string;
   updated_at: string;
 }
+
+// ---------------------------------------------------------------- knowledge
+export type KnowledgeCategory =
+  | "research" | "troubleshooting" | "runbook" | "playbook" | "technical_standard" | "design_standard"
+  | "architecture_pattern" | "decision" | "lesson_learned" | "template" | "reusable_component"
+  | "setup_guide" | "checklist" | "project_documentation";
+export type Verification =
+  | "verified_tested" | "verified_docs" | "applied_in_project" | "research_unimplemented" | "ai_suggestion" | "outdated";
+export type LinkRole = "origin" | "reused" | "related";
+export type RelationKind = "evidence_for" | "supersedes" | "related";
+
+export interface CategoryTemplate {
+  category: KnowledgeCategory;
+  label: string;
+  fields: { key: string; label: string; hint: string }[];
+}
+
+export interface KnowledgeItem {
+  id: string;
+  category: KnowledgeCategory;
+  title: string;
+  summary: string | null;
+  content: string | null;
+  fields: Record<string, string>;
+  verification: Verification;
+  tags: string[];
+  sources: string | null;
+  limitations: string | null;
+  reuse_notes: string | null;
+  version: number;
+  source_work_log_id: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+  projects: { project_id: string; project_name: string; role: LinkRole; note: string | null; created_at: string }[];
+}
+
+export interface KnowledgeDetail extends KnowledgeItem {
+  tasks: { task_id: string; task_title: string; project_name: string }[];
+  relations: {
+    id: string; kind: RelationKind; direction: "outgoing" | "incoming"; other_id: string; other_title: string;
+    other_category: KnowledgeCategory; other_verification: Verification;
+  }[];
+}
+
+export interface KnowledgeVersion { version: number; snapshot: Record<string, unknown>; change_note: string | null; created_at: string }
+
+export interface SearchHit {
+  type: "project" | "task" | "knowledge" | "methodology" | "document" | "work_log" | "voice_note";
+  id: string;
+  title: string;
+  snippet: string | null;
+  project_id: string | null;
+  project_name: string | null;
+  meta: string | null;
+}
+
+// ---------------------------------------------------------------- methodologies
+export type MethodologyKind = "methodology" | "playbook" | "starter_kit";
+export type MethodologyStatus = "draft" | "published" | "deprecated";
+export type Classification = "mandatory" | "recommended" | "optional" | "not_applicable";
+export type DeliverableStatus = "pending" | "in_progress" | "done" | "not_applicable";
+
+export interface MethodologySummary {
+  id: string;
+  slug: string;
+  name: string;
+  kind: MethodologyKind;
+  status: MethodologyStatus;
+  purpose: string | null;
+  when_to_use: string | null;
+  version: number;
+  origin_project_id: string | null;
+  origin_project_name: string | null;
+  archived_at: string | null;
+  updated_at: string;
+  stage_count: number;
+  activity_count: number;
+  deliverable_count: number;
+  adoption_count: number;
+}
+
+export interface MethodologyActivity { id: string; position: number; title: string; instructions: string | null; expected_output: string | null }
+export interface MethodologyStage {
+  id: string; position: number; name: string; description: string | null; validation_criteria: string | null;
+  activities: MethodologyActivity[];
+}
+export interface DeliverableDefinition {
+  id: string; stage_id: string | null; position: number; name: string; description: string | null;
+  classification: Classification; template_id: string | null;
+}
+
+export interface MethodologyDetail extends MethodologySummary {
+  prerequisites: string | null;
+  tools: string | null;
+  dependencies: string | null;
+  common_risks: string | null;
+  completion_criteria: string | null;
+  limitations: string | null;
+  stages: MethodologyStage[];
+  deliverables: DeliverableDefinition[];
+  adoptions: { id: string; project_id: string; project_name: string; methodology_version: number; adopted_at: string }[];
+}
+
+export interface ProjectDeliverable {
+  id: string; definition_id: string | null; name: string; classification: Classification; status: DeliverableStatus;
+  document_id: string | null; milestone_id: string | null; notes: string | null;
+}
+
+export interface Adoption {
+  id: string; project_id: string; project_name: string; methodology_id: string; methodology_name: string;
+  methodology_version: number; current_version: number; stage_ids: string[]; notes: string | null; adopted_at: string;
+  deliverables: ProjectDeliverable[]; milestones_created: number; tasks_created: number;
+}
+
+// ---------------------------------------------------------------- documents
+export type DocumentCategory =
+  | "brief" | "requirements" | "architecture" | "adr" | "design" | "diagram" | "research" | "report"
+  | "prototype" | "specification" | "testing" | "release_notes" | "meeting_notes" | "presentation" | "other";
+export type DocumentStatus = "draft" | "final" | "superseded";
+
+export interface DocumentRoot {
+  id: string; name: string; path: string; project_id: string | null; project_name: string | null;
+  last_scanned_at: string | null; document_count: number; available: boolean;
+}
+
+export interface ScannedFile {
+  relative_path: string; size_bytes: number; modified_at: string; suggested_category: DocumentCategory; document_id: string | null;
+}
+
+export interface ProjectDocument {
+  id: string; title: string; category: DocumentCategory; status: DocumentStatus; description: string | null;
+  project_id: string | null; project_name: string | null; root_id: string | null; root_name: string | null;
+  relative_path: string | null; url: string | null; content: string | null; tags: string[]; size_bytes: number | null;
+  file_modified_at: string | null; archived_at: string | null; created_at: string; updated_at: string;
+  source: "file" | "link" | "note"; file_available: boolean | null; tasks: { task_id: string; task_title: string }[];
+}
+
+// ---------------------------------------------------------------- voice
+export interface VoiceStatus {
+  provider: string; available: boolean; message: string; retention: "delete" | "keep"; retention_message: string;
+  outputs: { key: string; label: string; needs_ai: boolean }[];
+}
+
+export interface VoiceNote {
+  id: string; title: string; project_id: string | null; project_name: string | null; source: "recording" | "text";
+  duration_seconds: number | null; has_audio: boolean; audio_deleted_at: string | null; transcript_raw: string | null;
+  transcript_edited: string | null; transcription_provider: string | null; created_at: string; updated_at: string;
+  pending_suggestions: number;
+}
+
+export type SuggestionKind = "task" | "blocker" | "decision" | "progress";
+export interface Suggestion {
+  id: string; kind: SuggestionKind; status: "pending" | "approved" | "rejected" | "deferred"; source_type: string;
+  source_id: string | null; project_id: string | null; project_name: string | null; generator: string;
+  payload: { title?: string; priority?: Priority }; evidence: string | null; duplicate_of_task_id: string | null;
+  duplicate_of_title: string | null; created_task_id: string | null; created_work_log_id: string | null;
+}

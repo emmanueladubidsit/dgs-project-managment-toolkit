@@ -13,9 +13,10 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { useHealth } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { LoadingState } from "./common";
+import { GlobalSearch } from "./global-search";
 import { TaskFormDialog } from "./task-form-dialog";
 
-type NavItem = { href: string; label: string; icon: typeof LayoutDashboard; later?: boolean };
+type NavItem = { href: string; label: string; icon: typeof LayoutDashboard };
 
 // Delivery workflow first; supporting modules after; administration last and separated.
 export const NAV: { group: string; items: NavItem[] }[] = [
@@ -33,10 +34,10 @@ export const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "Knowledge",
     items: [
-      { href: "/knowledge", label: "Knowledge & Research", icon: BookOpen, later: true },
-      { href: "/methodologies", label: "Methodologies & Playbooks", icon: Library, later: true },
-      { href: "/documents", label: "Documents & Artefacts", icon: FileText, later: true },
-      { href: "/voice", label: "Voice & Writing", icon: Mic, later: true },
+      { href: "/knowledge", label: "Knowledge & Research", icon: BookOpen },
+      { href: "/methodologies", label: "Methodologies & Playbooks", icon: Library },
+      { href: "/documents", label: "Documents & Artefacts", icon: FileText },
+      { href: "/voice", label: "Voice & Writing", icon: Mic },
     ],
   },
 ];
@@ -53,7 +54,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
         <div key={section.group}>
           <p className="mb-1 px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">{section.group}</p>
           <ul className="space-y-0.5">
-            {section.items.map(({ href, label, icon: Icon, later }) => {
+            {section.items.map(({ href, label, icon: Icon }) => {
               const active = isActive(pathname, href);
               return (
                 <li key={href}>
@@ -62,7 +63,6 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
                       active ? "bg-primary/10 font-medium text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent")}>
                     <Icon className="size-4 shrink-0" aria-hidden />
                     <span className="truncate">{label}</span>
-                    {later && <span className="ml-auto rounded bg-muted px-1.5 text-[10px] text-muted-foreground">Soon</span>}
                   </Link>
                 </li>
               );
@@ -162,6 +162,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Suspense fallback={null}><TodayLabel /></Suspense>
           </span>
           <div className="ml-auto flex items-center gap-3">
+            <GlobalSearch />
             <ServerStatus />
             <ThemeToggle />
             <Button size="sm" onClick={() => setNewTask(true)}><Plus /> New task</Button>

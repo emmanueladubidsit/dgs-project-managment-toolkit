@@ -8,6 +8,7 @@ const today = new Date();
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const TODAY = iso(today);
 let projectId = "";
+const cleanupKnowledge: string[] = [];
 
 async function choose(page: Page, scope: ReturnType<Page["getByRole"]>, label: string, option: string) {
   await scope.getByLabel(label, { exact: true }).click();
@@ -15,6 +16,7 @@ async function choose(page: Page, scope: ReturnType<Page["getByRole"]>, label: s
 }
 
 test.afterAll(async ({ request }) => {
+  for (const id of cleanupKnowledge) await request.delete(`/api/knowledge/${id}?confirm=true`);
   if (!projectId) return;
   const logs = await (await request.get(`/api/work-logs?project_id=${projectId}`)).json();
   for (const l of logs) await request.delete(`/api/work-logs/${l.id}`);
@@ -105,6 +107,21 @@ test("project → workstream → milestone → tasks → plan → update → rep
   await expect(report).toHaveValue(/Compared session vs token auth/);
   await expect(report).toHaveValue(/Tasks planned this week: \*\*1\*\*/);
 
+  // 10. Create a reusable knowledge item linked to the project
+  await page.goto("/knowledge");
+  await page.getByRole("button", { name: "New item" }).first().click();
+  const kd = page.getByRole("dialog");
+  await kd.getByLabel("Title (required)").fill(`${RUN} auth research`);
+  await kd.getByLabel("Research question").fill("Session or token authentication?");
+  await kd.getByLabel("Findings").fill("Sessions are simpler for a single-origin app.");
+  await choose(page, kd, "Origin project", PROJECT);
+  await kd.getByRole("button", { name: "Save" }).click();
+  await expect(page).toHaveURL(/\/knowledge\/[0-9a-f-]{36}$/);
+  cleanupKnowledge.push(page.url().split("/").pop()!);
+  await expect(page.getByRole("heading", { level: 1, name: `${RUN} auth research` })).toBeVisible();
+  await expect(page.getByText("Research finding, not yet applied or tested in a project.")).toBeVisible();
+  await expect(page.locator("main").getByText("Session or token authentication?")).toBeVisible();
+
   // 11–12. Records persist across a fresh browser session (server data, not client state)
   const fresh = await page.context().browser()!.newContext();
   const p2 = await fresh.newPage();
@@ -113,6 +130,8 @@ test("project → workstream → milestone → tasks → plan → update → rep
   await p2.getByRole("tab", { name: "Backlog" }).click();
   await expect(p2.getByRole("button", { name: /Build login/ })).toBeVisible();
   await expect(p2.getByRole("button", { name: /Write login tests/ })).toBeVisible();
+  await p2.getByRole("tab", { name: "Library" }).click();
+  await expect(p2.getByRole("link", { name: `${RUN} auth research` })).toBeVisible();
   await fresh.close();
 });
 

@@ -1,11 +1,22 @@
 "use client";
-import { PlannedModule } from "@/components/planned-module";
+import { useState } from "react";
+import { PageHeader } from "@/components/common";
+import { DocumentsList, FoldersPanel } from "@/components/documents";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DocumentsPage() {
-  return <PlannedModule title="Documents & Artefacts" phase="Phase 7"
-    purpose="Index and link project documents where they already live, without moving or copying them."
-    features={["Register project directories with path validation and access safeguards",
-      "Metadata, categorisation and linking for briefs, ADRs, diagrams, specifications and reports",
-      "Never moves, deletes or modifies existing files without explicit approval"]}
-    interim={<p>For now, record a project’s repository and documentation location on the project itself (Edit → more fields).</p>} />;
+  const [tab, setTab] = useState("documents");
+  return (
+    <>
+      <PageHeader title="Documents & Artefacts" description="Briefs, architecture, ADRs, diagrams, reports and more — indexed where they already live." />
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="folders">Folders</TabsTrigger>
+        </TabsList>
+        <TabsContent value="documents"><DocumentsList /></TabsContent>
+        <TabsContent value="folders"><FoldersPanel /></TabsContent>
+      </Tabs>
+    </>
+  );
 }

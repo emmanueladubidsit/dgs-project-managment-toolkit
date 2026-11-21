@@ -19,9 +19,11 @@ frontend/playwright-report/
 *.sql.gz
 backups/
 recordings/
+backend/data/
 # OS / editor
 .DS_Store
 .vscode/
 .idea/
 # Tooling
 graphify-out/
+backend/tests/_tmp_*

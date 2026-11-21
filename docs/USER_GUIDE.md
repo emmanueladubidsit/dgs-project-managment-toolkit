@@ -62,11 +62,51 @@ and record hours. Updates appear on the project's **Decisions & updates** tab an
 project and a stakeholder or technical format, then **Generate**. Edit the Markdown, then **Copy**,
 **Download .md** or **Save**. Reports contain only recorded data; empty sections say “None recorded”.
 
-## 7. Administration
+## 7. Keep and reuse knowledge
+
+**Knowledge & Research → New item.** Choose a category (research, troubleshooting guide, decision,
+runbook, lesson learned, template…) to get its structured fields. Set the **verification status**
+honestly — items start as “Research — not yet applied”. Every save keeps the previous version;
+restore any version from the history. On an item you can record its **origin project**, mark where
+it was **reused**, link tasks, and link other items as **evidence for** a decision or as
+**superseded** (the older item is then marked Outdated). On a project's **Decisions & updates**
+tab, **Save to knowledge** turns a recorded decision or research note into a draft item.
+
+## 8. Methodologies & playbooks
+
+Browse the library (13 starter methodologies, including *Assessing an existing codebase*). Open
+one to see its stages, activities, expected outputs and deliverables. **Adopt into a project** —
+all stages or only some — to create a milestone per stage and a task per activity (existing tasks
+with the same title are skipped). Track deliverables on the project's **Methodology** tab. Edit
+**Details** or **Stages** to change a methodology (each change is versioned), **Publish** it when
+ready, or **Duplicate** it to adapt it. When a project goes well, use **Save as reusable playbook**
+(project Methodology tab) or **Create from a project** to turn its plan into a draft — then remove
+anything project-specific or confidential before publishing.
+
+## 9. Documents & artefacts
+
+**Folders tab:** register a project folder by its full path, then **Scan and choose files** and
+index the ones you want. The workspace only reads files: it never moves, edits or deletes them,
+and it never lists or opens secret files such as `.env` or keys. **Documents tab:** filter and
+search; add links to documents elsewhere or short notes; open a document to change its category,
+status or project, preview text files, and link it to tasks. A project's **Library** tab shows its
+knowledge and documents.
+
+## 10. Voice & writing
+
+**Record** (pause, resume, stop, play back, then **Transcribe**) or **type or paste** text. On the
+note, edit the transcript, then use **Writing tools**: clean transcript, bullet points, structured
+notes, meeting or research notes, a daily update or a task breakdown — **Save as update** to record
+it. **Find suggestions** proposes tasks, blockers and decisions; edit, then **Create task** /
+**Record update**, **Reject** or decide **Later**. Possible duplicates of existing tasks are flagged.
+Outputs marked “needs AI” are not available until an AI provider is added — they are never faked.
+
+Press **⌘K / Ctrl+K** anywhere to search everything.
+
+## 11. Administration
 
 **Administration** shows health, database version and size, record counts and backup commands.
 
 ## Coming later
 
-Knowledge & Research, Methodologies & Playbooks, Documents & Artefacts and Voice & Writing are
-reserved in the navigation and marked *Soon*; each page explains what it will do. See the roadmap.
+AI-assisted writing and planning (Phase 8) and Claude Code activity capture (Phase 9). See the roadmap.

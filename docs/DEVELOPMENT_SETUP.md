@@ -29,6 +29,17 @@ make web         # http://localhost:3010
 
 These deliberately avoid the common 3000/8000/5432, which other local projects often use.
 
+### Optional: local voice transcription
+
+```bash
+make voice        # installs faster-whisper into backend/.venv
+```
+
+The first transcription downloads the Whisper “base” model (~150 MB) from Hugging Face; after that it
+runs offline. Settings in `backend/.env`: `TRANSCRIPTION_PROVIDER` (`auto` / `none`),
+`WHISPER_MODEL` (`tiny`, `base`, `small`…; larger is more accurate and slower), `VOICE_RETENTION`
+(`delete` — default — or `keep`).
+
 ## Configuration
 
 - `backend/.env` (from `backend/.env.example`): `DATABASE_URL`, `TEST_DATABASE_URL`,
@@ -71,6 +82,9 @@ lives in the Docker volume `dgs_pgdata`; `docker compose down` keeps it, `docker
 | `next dev`: “Another next dev server is already running” | A previous dev server for this folder is still running. Stop it (it prints the PID), or use `make web-prod`. |
 | Docker: `mkdir /host_mnt/...: operation not permitted` | macOS blocks Docker from folders on the Desktop. The Compose file deliberately uses no bind mounts; do not add any here. |
 | Database connection refused | `make db`, then `docker ps` should list `dgs-workspace-db`. |
+| Recording says the microphone is blocked | Allow microphone access for `localhost:3010` in the browser's site settings. |
+| “Transcription unavailable” | Run `make voice`, restart the API, or type/paste text instead. |
+| Folder registration refused | Use a full path to a specific project folder; system folders and your whole home folder are not allowed. On macOS the terminal running the API may need Files & Folders permission. |
 | Tests refuse to run | The suite only runs against a database whose name contains `test`. Check `TEST_DATABASE_URL`. |
 
 ## Working with Claude Code in this repository

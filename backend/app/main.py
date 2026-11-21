@@ -3,7 +3,17 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import planning, projects, reports, system, tasks
+from app.api import (
+    documents,
+    knowledge,
+    methodologies,
+    planning,
+    projects,
+    reports,
+    system,
+    tasks,
+    voice,
+)
 from app.config import get_settings
 from app.errors import register_error_handlers
 
@@ -26,5 +36,15 @@ app.add_middleware(
 )
 register_error_handlers(app)
 
-for module in (projects, tasks, planning, reports, system):
+for module in (
+    projects,
+    tasks,
+    planning,
+    reports,
+    system,
+    knowledge,
+    methodologies,
+    documents,
+    voice,
+):
     app.include_router(module.router, prefix="/api")

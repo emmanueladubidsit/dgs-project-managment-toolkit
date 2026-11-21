@@ -20,6 +20,10 @@ the local network. Do not change these bindings until authentication exists.
 | Diagnostics | The admin endpoint reports versions, sizes and counts only — never credentials or connection strings (tested). |
 | Repository hygiene | `.gitignore` excludes `.env*`, database dumps, `backups/`, `recordings/`, build output and `graphify-out/`. |
 | CORS | Restricted to the configured frontend origin. |
+| File access | Read-only, confined to folders you register (resolved paths, no traversal or symlink escapes); system folders and the whole home folder cannot be registered; secret-looking files are never listed or read; deleting records never touches files ([ADR 0005](DECISIONS/0005-read-only-document-indexing.md)). |
+| Links | Only `http(s)://` document links are accepted (no `javascript:`/`file:`); opened with `rel="noopener noreferrer"`. |
+| Voice | Local transcription keeps audio on this machine; recordings are deleted immediately after transcription by default and can be deleted at any time; uploads are type- and size-limited; failed uploads are not kept. |
+| AI honesty | Unverified knowledge is labelled; AI-only writing outputs are refused rather than faked; voice/text suggestions change nothing until approved. |
 
 ## Data and retention
 
@@ -34,13 +38,12 @@ the local network. Do not change these bindings until authentication exists.
   with their sources, and never be presented as verified fact.
 - Claude Code capture will be opt-in, will not store full transcripts by default, and will filter
   secrets, tokens and environment variables.
-- Voice recordings will have configurable retention and deletion controls.
-- Document indexing will validate paths against registered directories and never move, delete or
-  modify files without explicit approval.
 
 ## Known gaps
 
 - No authentication or authorisation (by design for the single-user MVP).
+- The Whisper model is downloaded once from Hugging Face on first use (a network request);
+  after that transcription is fully offline.
 - No automated dependency-vulnerability scan yet — run `npm audit` and `uv pip list --outdated`
   periodically; add to CI in Phase 10.
 - Database credentials in the example files are development defaults; change them if the

@@ -72,7 +72,7 @@ export const useHealth = () =>
   useQuery({ queryKey: ["health"], queryFn: () => api<{ status: string; version: string; database: string }>("/health"), refetchInterval: 30_000 });
 
 // ---------- mutations
-function useAction<TVars, TResult>(
+export function useAction<TVars, TResult>(
   fn: (vars: TVars) => Promise<TResult>,
   opts: { success?: string | ((r: TResult) => string); silent?: boolean } = {},
 ) {

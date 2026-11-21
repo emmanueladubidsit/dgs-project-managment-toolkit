@@ -88,3 +88,34 @@ export function relativeDue(iso: string | null): string | null {
 
 export const hours = (h: string | number | null | undefined) =>
   h === null || h === undefined ? "—" : `${Number(h).toLocaleString("en-GB")}h`;
+
+export const VERIFICATION_LABEL: Record<string, string> = {
+  verified_tested: "Verified and tested",
+  verified_docs: "Verified against official docs",
+  applied_in_project: "Applied in a project",
+  research_unimplemented: "Research — not yet applied",
+  ai_suggestion: "AI suggestion — awaiting review",
+  outdated: "Outdated or superseded",
+};
+export const LINK_ROLE_LABEL: Record<string, string> = { origin: "Origin", reused: "Reused in", related: "Related" };
+export const RELATION_LABEL: Record<string, string> = { evidence_for: "Evidence for", supersedes: "Supersedes", related: "Related to" };
+export const CLASSIFICATION_LABEL: Record<string, string> = {
+  mandatory: "Mandatory", recommended: "Recommended", optional: "Optional", not_applicable: "Not applicable",
+};
+export const DELIVERABLE_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending", in_progress: "In progress", done: "Done", not_applicable: "Not applicable",
+};
+export const METHODOLOGY_KIND_LABEL: Record<string, string> = { methodology: "Methodology", playbook: "Playbook", starter_kit: "Starter kit" };
+export const DOCUMENT_CATEGORY_LABEL: Record<string, string> = {
+  brief: "Project brief", requirements: "Requirements", architecture: "Architecture", adr: "Decision record (ADR)",
+  design: "Design", diagram: "Diagram", research: "Research", report: "Report", prototype: "Prototype",
+  specification: "Technical specification", testing: "Testing", release_notes: "Release notes",
+  meeting_notes: "Meeting notes", presentation: "Presentation", other: "Other",
+};
+
+export function fileSize(bytes: number | null): string {
+  if (bytes === null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

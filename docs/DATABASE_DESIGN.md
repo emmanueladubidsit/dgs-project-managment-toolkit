@@ -37,6 +37,27 @@ plan_notes (period = day | week | month, period_start) — objectives, notes, av
 | `work_logs` | Dated entries of kind progress / decision / blocker / research / unplanned / note, optional hours, project and task. |
 | `reports` | Saved, editable report Markdown with its kind, period and generation time. |
 
+### Library (migration 0002)
+
+| Table | Notes |
+| --- | --- |
+| `knowledge_items` | Category, title, summary, Markdown content, JSONB `fields` (validated per category template), verification, tags, sources, limitations, reuse notes, version, optional source work log, `archived_at`. |
+| `knowledge_versions` | Snapshot of the previous state per version (`item_id`, `version` unique). |
+| `knowledge_project_links` | Item ↔ project with role origin / reused / related (unique pair). |
+| `knowledge_task_links` | Item ↔ task. |
+| `knowledge_relations` | Directed item → item: evidence_for / supersedes / related (no self links). |
+| `methodologies` | Slug (unique), kind (methodology / playbook / starter kit), status (draft / published / deprecated), purpose, when to use, prerequisites, tools, dependencies, risks, completion criteria, limitations, version, origin project. |
+| `methodology_stages`, `methodology_activities` | Ordered stages and activities (instructions, expected output). |
+| `deliverable_definitions` | Name, classification (mandatory / recommended / optional / not applicable), optional stage and template (knowledge item). |
+| `methodology_versions` | Full JSON snapshot per version. |
+| `project_methodologies` | A project's adoption: methodology, version adopted, stage ids adopted, notes. |
+| `project_deliverables` | Per-adoption deliverable tracking: classification override, status, linked document and milestone. |
+| `document_roots` | Registered folders (resolved real path, unique), optional project, last scan time. |
+| `project_documents` | Title, category, status, description, project, root + relative path **or** URL **or** in-app content, tags, size and modified time from disk; unique (root, path). |
+| `document_task_links` | Document ↔ task. |
+| `voice_notes` | Recording or text: transcript (raw and edited), provider, duration, audio path only while retained, audio deletion time. |
+| `suggestions` | Kind (task / blocker / decision / progress), status (pending / approved / rejected / deferred), source note, project, generator (`rules`), payload, evidence sentence, possible duplicate task, created task or work log. |
+
 ## Constraints and indexes
 
 - CHECKs: progress range, weight range, task is not its own parent, dependency is not self.
@@ -46,12 +67,11 @@ plan_notes (period = day | week | month, period_start) — objectives, notes, av
 
 ## Deliberately deferred
 
-From the brief's entity list, these arrive with their modules so the schema grows with real use:
-`ResearchRecord`, `KnowledgeItem` (+ project links), `DecisionRecord`, `EvidenceReference`
-(Phase 6); `Methodology`, `MethodologyVersion`, `MethodologyStage`, `MethodologyActivity`,
-`DeliverableDefinition`, `Artefact`, `Template`, `Playbook`, `StarterKit`, `ProjectDocument`
-(Phase 7); `ClaudeSession`, `VoiceNote`, `Transcript` (Phase 9); `SystemSetting`, `AuditEvent`
-(Phase 10). Decisions and research are captured today as `work_logs` so nothing is lost.
+The brief's ResearchRecord, DecisionRecord, Template and EvidenceReference are represented by
+`knowledge_items` categories and `knowledge_relations` (ADR 0004); Playbook and StarterKit are
+methodology kinds; Artefact is a `project_documents` record; Transcript lives on `voice_notes`.
+Still deferred: `ClaudeSession` (Phase 9, after researching supported Claude Code mechanisms) and
+`SystemSetting`, `AuditEvent` (Phase 10).
 
 ## Migrations
 

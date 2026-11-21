@@ -1,5 +1,6 @@
 "use client";
-import { Archive, ArchiveRestore, CalendarDays, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, BookOpen, CalendarDays, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Textarea } from "@/components/ui/textarea";
 import {
   formatDate, formatDateTime, hours, PRIORITIES, PRIORITY_LABEL, relativeDue, STATUS_LABEL, TASK_STATUSES,
+  VERIFICATION_LABEL,
 } from "@/lib/format";
+import { useDocuments, useKnowledgeList } from "@/lib/queries-library";
 import {
   useAddComment, useAddDependency, useArchiveTask, useComments, useDeleteTask, useRemoveDependency,
   useTask, useTaskActivity, useTasks, useUpdateTask,
@@ -107,6 +110,7 @@ function TaskBody({ task, onNavigate, onClose }: { task: TaskDetail; onNavigate:
 
       <Subtasks task={task} onNavigate={onNavigate} />
       <Dependencies task={task} onNavigate={onNavigate} />
+      <LinkedLibrary taskId={task.id} />
       <Comments taskId={task.id} />
       <History taskId={task.id} />
 
@@ -223,6 +227,26 @@ function Dependencies({ task, onNavigate }: { task: TaskDetail; onNavigate: (id:
       )}
       {task.dependents.length > 0 && (
         <p className="mt-2 text-xs text-muted-foreground">Blocks: {task.dependents.map((d) => d.title).join(", ")}</p>
+      )}
+    </div>
+  );
+}
+
+function LinkedLibrary({ taskId }: { taskId: string }) {
+  const knowledge = useKnowledgeList({ task_id: taskId });
+  const docs = useDocuments({ task_id: taskId });
+  const k = knowledge.data ?? [];
+  const d = docs.data ?? [];
+  return (
+    <div>
+      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold"><BookOpen className="size-4" aria-hidden /> Linked knowledge and documents</h3>
+      {k.length === 0 && d.length === 0 ? (
+        <p className="text-sm text-muted-foreground">None. Link research, guides or documents to this task from the Knowledge or Documents pages.</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {k.map((x) => <li key={x.id}><Link className="hover:underline" href={`/knowledge/${x.id}`}>{x.title}</Link> <span className="text-xs text-muted-foreground">· {VERIFICATION_LABEL[x.verification]}</span></li>)}
+          {d.map((x) => <li key={x.id}><Link className="hover:underline" href="/documents">{x.title}</Link> <span className="text-xs text-muted-foreground">· document</span></li>)}
+        </ul>
       )}
     </div>
   );

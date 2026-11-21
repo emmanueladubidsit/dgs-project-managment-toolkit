@@ -1,11 +1,12 @@
 # Convenience commands. Run from the repository root.
-.PHONY: setup db api web web-prod migrate test e2e check backup
+.PHONY: setup db api web web-prod migrate seed voice test e2e check backup
 
 setup: db
 	cd backend && [ -f .env ] || cp .env.example .env
 	cd backend && uv sync
 	cd frontend && npm install
 	$(MAKE) migrate
+	$(MAKE) seed
 
 db:
 	docker compose up -d db
@@ -17,6 +18,12 @@ db:
 
 migrate:
 	cd backend && uv run alembic upgrade head
+
+seed:
+	cd backend && uv run python -m app.seed
+
+voice:  ## optional: local Whisper transcription (~150 MB model downloads on first use)
+	cd backend && uv sync --extra voice
 
 api:
 	cd backend && uv run uvicorn app.main:app --reload --port 8010

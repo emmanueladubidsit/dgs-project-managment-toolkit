@@ -11,8 +11,15 @@ dependencies = [
     "fastapi>=0.165.0",
     "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.3",
+    "python-multipart>=0.0.34",
     "sqlalchemy>=2.0",
     "uvicorn[standard]>=0.54.0",
+]
+
+[project.optional-dependencies]
+voice = [
+    "av>=14,<16",
+    "faster-whisper>=1.2.1",
 ]
 
 
@@ -40,3 +47,6 @@ ignore = ["B008"]  # FastAPI dependency injection uses Depends()/Query() in defa
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[tool.ruff.lint.per-file-ignores]
+"app/seed_data.py" = ["E501", "E741"]  # prose content; short M/R/O constants aid readability

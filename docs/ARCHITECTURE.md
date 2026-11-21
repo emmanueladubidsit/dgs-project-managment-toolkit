@@ -26,7 +26,12 @@ move to another host later without changing the frontend.
 | `services/progress.py` | Weighted progress calculation with a human-readable explanation |
 | `services/tasks.py` | Task rules: reference validation, status transitions, cycle checks, history, batched serialisation |
 | `services/reports.py` | Deterministic Markdown report generation |
-| `api/` | Routers: `projects`, `tasks`, `planning`, `reports`, `system` (dashboard, health, admin) |
+| `services/knowledge_templates.py` | Structured-field templates per knowledge category ([ADR 0004](DECISIONS/0004-single-knowledge-table-with-templates.md)) |
+| `services/files.py` | Read-only, root-confined, secret-filtering file access ([ADR 0005](DECISIONS/0005-read-only-document-indexing.md)) |
+| `services/transcription.py` | Speech-to-text provider interface; local faster-whisper ([ADR 0006](DECISIONS/0006-voice-providers-and-no-faked-ai.md)) |
+| `services/text_tools.py` | Deterministic cleaning, structuring and suggestion extraction |
+| `seed.py`, `seed_data.py` | Idempotent starter methodology library |
+| `api/` | Routers: `projects`, `tasks`, `planning`, `reports`, `system` (dashboard, health, admin), `knowledge` (+ global search), `methodologies`, `documents`, `voice` (+ suggestions) |
 | `errors.py` | One error shape: `{"error": {"code", "message", "details"}}`; unexpected errors are logged, never leaked |
 
 ### Core business rules
@@ -64,11 +69,22 @@ move to another host later without changing the frontend.
   `task-views.tsx` (Kanban, table, filters), `task-sheet.tsx`, dialogs for projects, tasks,
   milestones and work logs, `report-composer.tsx`, `planned-module.tsx`.
 
+### Library rules
+
+- **Nothing is verified by default**: knowledge starts as *Research — not yet applied*; AI
+  suggestions have their own status and warning; superseded items are marked *Outdated*.
+- **Reuse keeps provenance**: one immutable origin project per item; reuse is recorded per project;
+  methodologies record the project they were derived from and the version each project adopted.
+- **Adoption never duplicates**: re-adopting a stage is refused; tasks with an existing title are
+  skipped; removing an adoption keeps the milestones and tasks it created.
+- **Files are read-only and confined** to registered folders; secrets are never listed or read.
+- **Suggestions need approval**: voice/text never changes the backlog directly.
+
 ## Extension points (later phases)
 
 - **AI** will sit behind a provider interface in `backend/app/services/ai/` and only ever produce
   *suggestions* that a person approves (Phase 8). The core never imports it.
-- **Knowledge, methodologies and documents** get their own models, routers and migrations
-  (Phases 6–7); navigation already reserves their places.
+- **AI writing outputs** (rewrite, summary, email drafts) are already listed in Voice & Writing and
+  return `needs_ai` until a provider is configured.
 - **Multi-user**: `assignee` exists as free text; roles and ownership can be added without
   restructuring (admin endpoints are already separated under `/api/admin`).

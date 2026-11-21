@@ -30,6 +30,11 @@ from app.main import app  # noqa: E402
 DATA_TABLES = [
     "task_activity", "task_comments", "task_dependencies", "work_logs", "reports",
     "plan_notes", "tasks", "milestones", "workstreams", "projects",
+    "knowledge_versions", "knowledge_project_links", "knowledge_task_links",
+    "knowledge_relations", "knowledge_items", "methodology_versions", "project_deliverables",
+    "project_methodologies", "deliverable_definitions", "methodology_activities",
+    "methodology_stages", "methodologies", "document_task_links", "project_documents",
+    "document_roots", "suggestions", "voice_notes",
 ]  # fmt: skip
 
 

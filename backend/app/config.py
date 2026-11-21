@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     )
     cors_origins: str = "http://localhost:3010"
     log_level: str = "INFO"
+    # Voice: "auto" uses local Whisper when installed; "none" disables transcription.
+    transcription_provider: str = "auto"
+    whisper_model: str = "base"
+    # "delete" removes audio as soon as it is transcribed; "keep" retains it until you delete it.
+    voice_retention: str = "delete"
+    recordings_dir: str = "data/recordings"
+    max_upload_mb: int = 50
 
     @property
     def cors_origin_list(self) -> list[str]:

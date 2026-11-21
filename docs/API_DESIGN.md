@@ -36,6 +36,7 @@ Messages are written in plain British English so the frontend can show them dire
 
 - `DELETE /api/tasks/{id}?confirm=true` — permanently deletes a task and its subtasks.
 - `DELETE /api/projects/{id}?confirm=<exact project name>` — permanently deletes a project.
+- `DELETE /api/knowledge/{id}?confirm=true`, `DELETE /api/methodologies/{id}?confirm=true` (refused while adopted), `DELETE /api/document-roots/{id}?confirm=true` (index records only — files are never touched).
 - Archive endpoints are the reversible alternative.
 
 ## Endpoints
@@ -94,5 +95,78 @@ Messages are written in plain British English so the frontend can show them dire
 | `GET` | `/api/dashboard` | Dashboard |
 | `GET` | `/api/health` | Health |
 | `GET` | `/api/admin/system` | System Info |
+| `GET` | `/api/knowledge/templates` | Templates |
+| `GET` | `/api/knowledge` | List Knowledge |
+| `POST` | `/api/knowledge` | Create Knowledge |
+| `GET` | `/api/knowledge/{item_id}` | Get Knowledge |
+| `PATCH` | `/api/knowledge/{item_id}` | Update Knowledge |
+| `DELETE` | `/api/knowledge/{item_id}` | Delete Knowledge |
+| `GET` | `/api/knowledge/{item_id}/versions` | List Versions |
+| `POST` | `/api/knowledge/{item_id}/restore-version/{version}` | Restore Version |
+| `POST` | `/api/knowledge/{item_id}/archive` | Archive Knowledge |
+| `POST` | `/api/knowledge/{item_id}/restore` | Unarchive Knowledge |
+| `POST` | `/api/knowledge/{item_id}/projects` | Link Project |
+| `DELETE` | `/api/knowledge/{item_id}/projects/{project_id}` | Unlink Project |
+| `POST` | `/api/knowledge/{item_id}/tasks` | Link Task |
+| `DELETE` | `/api/knowledge/{item_id}/tasks/{task_id}` | Unlink Task |
+| `POST` | `/api/knowledge/{item_id}/relations` | Add Relation |
+| `DELETE` | `/api/knowledge/relations/{relation_id}` | Delete Relation |
+| `POST` | `/api/knowledge/from-work-log/{log_id}` | Promote Work Log |
+| `GET` | `/api/search` | Search |
+| `GET` | `/api/methodologies` | List Methodologies |
+| `POST` | `/api/methodologies` | Create Methodology |
+| `GET` | `/api/methodologies/{mid}` | Get Methodology |
+| `PATCH` | `/api/methodologies/{mid}` | Update Methodology |
+| `DELETE` | `/api/methodologies/{mid}` | Delete Methodology |
+| `PUT` | `/api/methodologies/{mid}/structure` | Replace Structure |
+| `POST` | `/api/methodologies/{mid}/publish` | Publish |
+| `POST` | `/api/methodologies/{mid}/deprecate` | Deprecate |
+| `GET` | `/api/methodologies/{mid}/versions` | Versions |
+| `POST` | `/api/methodologies/{mid}/duplicate` | Duplicate |
+| `POST` | `/api/methodologies/from-project/{project_id}` | From Project |
+| `POST` | `/api/methodologies/{mid}/archive` | Archive |
+| `POST` | `/api/methodologies/{mid}/restore` | Restore |
+| `GET` | `/api/projects/{project_id}/methodologies` | List Adoptions |
+| `POST` | `/api/projects/{project_id}/methodologies` | Adopt |
+| `PATCH` | `/api/project-deliverables/{did}` | Update Project Deliverable |
+| `DELETE` | `/api/project-methodologies/{aid}` | Remove Adoption |
+| `GET` | `/api/document-roots` | List Roots |
+| `POST` | `/api/document-roots` | Register Root |
+| `DELETE` | `/api/document-roots/{rid}` | Unregister Root |
+| `POST` | `/api/document-roots/{rid}/scan` | Scan Root |
+| `POST` | `/api/document-roots/{rid}/register` | Register Files |
+| `GET` | `/api/documents` | List Documents |
+| `POST` | `/api/documents` | Create Document |
+| `GET` | `/api/documents/{did}` | Get Document |
+| `PATCH` | `/api/documents/{did}` | Update Document |
+| `DELETE` | `/api/documents/{did}` | Delete Document |
+| `GET` | `/api/documents/{did}/preview` | Preview |
+| `POST` | `/api/documents/{did}/archive` | Archive Document |
+| `POST` | `/api/documents/{did}/restore` | Restore Document |
+| `POST` | `/api/documents/{did}/tasks` | Link Task |
+| `DELETE` | `/api/documents/{did}/tasks/{task_id}` | Unlink Task |
+| `GET` | `/api/voice/status` | Voice Status |
+| `GET` | `/api/voice/notes` | List Notes |
+| `POST` | `/api/voice/notes` | Upload Recording |
+| `POST` | `/api/voice/notes/text` | Create Text Note |
+| `GET` | `/api/voice/notes/{nid}` | Get Note |
+| `PATCH` | `/api/voice/notes/{nid}` | Update Note |
+| `DELETE` | `/api/voice/notes/{nid}` | Delete Note |
+| `GET` | `/api/voice/notes/{nid}/audio` | Get Audio |
+| `DELETE` | `/api/voice/notes/{nid}/audio` | Delete Audio |
+| `POST` | `/api/voice/notes/{nid}/transform` | Transform |
+| `POST` | `/api/voice/notes/{nid}/save-as-update` | Save As Update |
+| `POST` | `/api/voice/notes/{nid}/suggestions` | Suggest |
+| `GET` | `/api/suggestions` | List Suggestions |
+| `PATCH` | `/api/suggestions/{sid}` | Edit Suggestion |
+| `POST` | `/api/suggestions/{sid}/approve` | Approve |
+| `POST` | `/api/suggestions/{sid}/reject` | Reject |
+| `POST` | `/api/suggestions/{sid}/defer` | Defer |
+
+## Uploads
+
+`POST /api/voice/notes` takes `multipart/form-data` (`audio`, `title`, optional `project_id`).
+Accepted types: WebM, Ogg, MP4/M4A, MP3, WAV, AIFF; maximum size `MAX_UPLOAD_MB` (default 50).
+Returns 503 `transcription_unavailable` when no provider is configured — nothing is stored.
 
 To regenerate this table: `curl -s localhost:8010/openapi.json` and list `paths`.
