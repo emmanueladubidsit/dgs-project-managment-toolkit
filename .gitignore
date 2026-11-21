@@ -1,0 +1,27 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+# Node
+node_modules/
+.next/
+out/
+frontend/test-results/
+frontend/playwright-report/
+# Data that must never be committed
+*.dump
+*.sql.gz
+backups/
+recordings/
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+# Tooling
+graphify-out/
