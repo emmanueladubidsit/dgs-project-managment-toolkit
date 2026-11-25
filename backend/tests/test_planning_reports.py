@@ -117,14 +117,72 @@ def test_daily_report_reflects_real_data_only(client, make_task):
     md = r.json()["content"]
     assert "Shipped login" in md and "Use PostgreSQL" in md
     assert "progress 0% → 50%" in md
-    assert "_None recorded._" in md  # e.g. research section is empty, not invented
+    # Empty sections are left out and named once, never invented.
+    assert "## Research" not in md and "research recorded today._" in md
+    assert "## Decisions" in md
 
 
 def test_empty_weekly_report_invents_nothing(client):
     r = client.post("/api/reports/generate", json={"kind": "weekly", "date": str(TODAY)})
     md = r.json()["content"]
-    assert md.count("_None recorded._") >= 5
+    assert "_No completed work, blockers, risks, decisions or research recorded this week._" in md
+    assert "## Achievements" not in md and "## Blockers" not in md
     assert "Tasks planned this week: **0**" in md
+
+
+def test_portfolio_report_groups_by_project_and_collapses_new_tasks(client, project, make_task):
+    other = client.post("/api/projects", json={"name": "Second project"}).json()
+    a = make_task(title="Write the API")
+    client.patch(f"/api/tasks/{a['id']}", json={"status": "completed"})
+    b = client.post(
+        "/api/tasks", json={"project_id": other["id"], "title": "Draw the diagram"}
+    ).json()
+    client.patch(f"/api/tasks/{b['id']}", json={"status": "in_progress"})
+    client.patch(f"/api/tasks/{b['id']}", json={"status": "in_review"})
+    for i in range(5):
+        make_task(title=f"Planned item {i}")
+    md = client.post("/api/reports/generate", json={"kind": "daily", "date": str(TODAY)}).json()[
+        "content"
+    ]
+    assert "### Test project\n\n- Write the API" in md
+    assert "(Test project)" not in md and "**Write the API**" not in md  # no repetition, no bold
+    # Several status changes collapse to first → last.
+    assert "- Draw the diagram — To Do → In Review" in md
+    # New tasks are counted, not listed one by one (stakeholder format)…
+    assert (
+        "- Test project: **5** new tasks added to the plan." in md
+    )  # the completed one is not counted
+    assert "Planned item 3" not in md
+    # …but listed in the technical format.
+    tech = client.post(
+        "/api/reports/generate",
+        json={"kind": "daily", "date": str(TODAY), "audience": "technical"},
+    ).json()["content"]
+    assert "Planned item 3" in tech
+
+
+def test_weekly_counts_weekend_work_on_monday(client, project, make_task):
+    from datetime import date, timedelta
+
+    from app.db import SessionLocal
+    from app.models import Task
+
+    monday = TODAY - timedelta(days=TODAY.weekday())
+    saturday = monday + timedelta(days=5)
+    t = make_task(title="Weekend fix")
+    client.patch(f"/api/tasks/{t['id']}", json={"status": "completed"})
+    with SessionLocal() as db:  # the test database (see conftest)
+        task = db.get(Task, __import__("uuid").UUID(t["id"]))
+        task.completed_at = task.completed_at.replace(
+            year=saturday.year, month=saturday.month, day=saturday.day
+        )
+        db.commit()
+    md = client.post(
+        "/api/reports/generate", json={"kind": "weekly", "date": str(saturday)}
+    ).json()["content"]
+    next_monday = saturday + timedelta(days=2)
+    assert f"{next_monday:%a} {next_monday.day} {next_monday:%b}: Weekend fix" in md
+    assert isinstance(date.today(), date)
 
 
 def test_project_report_and_save_edit(client, project, make_task):

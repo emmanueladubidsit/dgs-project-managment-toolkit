@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import (
     ai,
     claude,
+    clips,
     documents,
     exports,
     knowledge,
@@ -93,5 +94,6 @@ for module in (
     exports,
     claude,
     tracker,
+    clips,
 ):
     app.include_router(module.router, prefix="/api")

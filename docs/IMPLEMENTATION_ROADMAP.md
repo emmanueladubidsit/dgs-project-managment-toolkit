@@ -18,6 +18,25 @@ Last updated: **25 November 2026**. Update this file at the end of every working
 
 ## Session log
 
+### 25 November 2026 (later) — browser extension for AI tools, cleaner reports
+
+- Embedding ChatGPT/Claude/Gemini/Copilot in the app was checked and is blocked by the sites
+  (`X-Frame-Options` / `frame-ancestors`); consumer chat history has no API. Built instead the
+  **Keep to DGS** extension (`extension/`, ADR 0011): Keep tick boxes, Keep selection, Keep code
+  and **Add to file** (preview → write). New token-protected `/api/clips` and file preview/write
+  endpoints; writes are off by default, confined to the connected folder, refuse secrets, `.git`,
+  dependency folders, symlink escapes and files changed since the preview, and are atomic.
+  Administration gains a Browser extension section.
+- Reports rewritten for readability: At a glance summary, one heading per project, plain lines,
+  status changes collapsed (first → last), new tasks counted (listed in technical format),
+  milestones only when they moved or are due, weekend work dated Monday, empty sections replaced by
+  one closing line. The composer opens a formatted Preview (new `MarkdownView`) with an Edit tab;
+  Word/PDF/slides use the same structure.
+- Verified: the real extension loaded in Chromium against a stand-in ChatGPT page (Keep → note;
+  Add to file → preview → file written; existing file shows the diff). Not yet tried on the live
+  sites while signed in — selectors may need adjusting there.
+- Tests: 142 backend, 27 frontend, 11 end-to-end — all passing.
+
 ### 25 November 2026 — project tracker import, projects folder and discovery
 
 - New **Tracker** tab: reads the newest `docs/project-management/PROGRESS-AND-PLAN-*.md` and proposes

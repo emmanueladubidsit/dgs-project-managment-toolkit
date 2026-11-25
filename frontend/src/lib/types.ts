@@ -447,7 +447,8 @@ export interface DiscoveredProject {
 export interface Discovery extends ProjectsFolder { candidates: DiscoveredProject[]; connected: number }
 export interface AddedProject { project_id: string; name: string; pending: number; path?: string }
 export interface CodeEvent {
-  id: string; kind: "commit" | "claude_session" | "claude_task" | "files" | "progress_file"; ref: string; title: string;
+  id: string; kind: "commit" | "claude_session" | "claude_task" | "files" | "progress_file" | "file_written"; ref: string; title: string;
   summary: string | null; detail: { files?: string[]; file_count?: number; branch?: string; turns?: number; ended?: boolean; status?: string; file?: string; status_changes?: string[]; checked?: string[] }; occurred_at: string;
 }
-export interface ClaudeSetup { token: string; hook_settings: Record<string, unknown>; mcp_command: string; claude_md: string }
+export interface ClaudeSetup { token: string; extension_dir: string; hook_settings: Record<string, unknown>; mcp_command: string; claude_md: string }
+export interface ClaudeSettings { allow_outbound: boolean; allow_file_writes: boolean }

@@ -59,8 +59,13 @@ and record hours. Updates appear on the project's **Decisions & updates** tab an
 ## 6. Report
 
 **Reports** (or a project's Reports tab): choose daily, weekly or project, a date, an optional
-project and a stakeholder or technical format, then **Generate**. Edit the Markdown, then **Copy**,
-**Download .md** or **Save**. Reports contain only recorded data; empty sections say “None recorded”.
+project and a stakeholder or technical format, then **Generate**. The draft opens as a formatted
+**Preview**: an *At a glance* summary, then sections grouped under one heading per project (weekly
+achievements are dated by working day; weekend work counts on Monday). Status changes show first →
+last; newly added tasks are counted rather than listed (listed in the technical format). Use the
+**Edit** tab to change the text, then **Copy**, **Download**, **Word**, **PDF**, **Slides** or **Save**.
+Reports contain only recorded data: sections with nothing recorded are left out and named in one
+closing line (e.g. “No risks, decisions or research recorded this week”).
 
 ## 7. Keep and reuse knowledge
 
@@ -172,6 +177,17 @@ Keep technical projects in one folder (set under **Administration → Projects f
 
 For an existing project, copy the tracker instructions from **Administration → Projects folder**
 into its `CLAUDE.md`.
+
+### Keep AI answers (browser extension)
+
+Use ChatGPT, Claude, Gemini or Copilot in your browser, signed in with your own account. With the
+**Keep to DGS** extension installed (**Administration → Browser extension**), tick **Keep** on the
+answers you want (or select text and press **Keep selection**). In the Keep bar, choose the project,
+or **New project…**, and save as a note (it appears in the project's Library with a link back to the
+chat) or as a progress update. On a code block, **Add to file** lets you choose the project and the
+path, **Preview** the new file or the before/after, then **Write file**. Writing must first be
+allowed in Administration, and only works inside the project's connected folder. Nothing else
+from the chat is stored.
 
 ## 14. Administration
 

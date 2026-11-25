@@ -184,6 +184,10 @@ Messages are written in plain British English so the frontend can show them dire
 | `PUT` | `/api/projects/{project_id}/connection` | Connect |
 | `DELETE` | `/api/projects/{project_id}/connection` | Disconnect |
 | `POST` | `/api/projects/{project_id}/sync` | Sync Now (also refreshes the tracker) |
+| `GET` | `/api/clips/projects` | Projects for the browser extension (token) |
+| `POST` | `/api/clips` | Keep chosen AI answers as a note or progress update (token; ADR 0011) |
+| `POST` | `/api/projects/{project_id}/files/preview` | Preview writing a file in the connected folder (token) |
+| `POST` | `/api/projects/{project_id}/files/write` | Write it after the preview; off unless allowed in Administration (token) |
 | `POST` | `/api/projects/{project_id}/tracker/refresh` | Read the newest tracker and propose changes (ADR 0010) |
 | `GET` | `/api/tracker/instructions` | CLAUDE.md text describing the tracker format |
 | `GET` | `/api/settings/projects` | Projects folder (`root`, `exists`, `source`) |

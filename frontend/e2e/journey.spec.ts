@@ -102,6 +102,8 @@ test("project → workstream → milestone → tasks → plan → update → rep
   await page.getByRole("tab", { name: "Reports" }).click();
   await choose(page, page.locator("main"), "Report", "Weekly report");
   await page.getByRole("button", { name: "Generate" }).click();
+  await expect(page.getByRole("heading", { name: "Planned versus actual" })).toBeVisible(); // formatted preview
+  await page.getByRole("tab", { name: "Edit" }).click();
   const report = page.getByLabel("Report content (Markdown)");
   await expect(report).toHaveValue(/Build login/);
   await expect(report).toHaveValue(/Compared session vs token auth/);

@@ -199,7 +199,10 @@ def test_mcp_context_is_off_by_default_and_masked(client, project, make_task, re
     params = {"project_dir": str(repo)}
     r = client.get("/api/claude/context", params=params, headers=h)
     assert r.status_code == 403 and r.json()["error"]["code"] == "outbound_disabled"
-    assert client.get("/api/claude/settings").json() == {"allow_outbound": False}
+    assert client.get("/api/claude/settings").json() == {
+        "allow_outbound": False,
+        "allow_file_writes": False,  # browser-extension file writes are off by default too
+    }
     client.put("/api/claude/settings", json={"allow_outbound": True})
     ctx = client.get("/api/claude/context", params=params, headers=h).json()
     assert [x["title"] for x in ctx["open_tasks"]] == ["Add rate limiting for the reviewer"]

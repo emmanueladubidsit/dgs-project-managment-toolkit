@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Keep to DGS Workspace",
+  "version": "0.1.0",
+  "description": "Keep chosen AI answers in your local DGS Engineering Workspace, and add code to project files after a preview.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://copilot.microsoft.com/*",
+    "http://localhost:8010/*",
+    "http://127.0.0.1:8010/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "options_ui": { "page": "options.html", "open_in_tab": false },
+  "action": { "default_title": "Keep to DGS Workspace — settings", "default_popup": "options.html" },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://copilot.microsoft.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

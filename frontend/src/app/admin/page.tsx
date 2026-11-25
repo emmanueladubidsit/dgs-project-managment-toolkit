@@ -2,6 +2,7 @@
 import { AISettings } from "@/components/ai-settings";
 import { ClaudeSetupPanel, PrivacyPanel } from "@/components/codebase";
 import { PageHeader, QueryView, Section } from "@/components/common";
+import { BrowserExtensionPanel } from "@/components/browser-extension";
 import { ProjectsFolderPanel } from "@/components/project-discovery";
 import { useHealth, useSystemInfo } from "@/lib/queries";
 
@@ -55,6 +56,7 @@ export default function AdminPage() {
         </QueryView>
         <AISettings />
         <ProjectsFolderPanel />
+        <BrowserExtensionPanel />
         <ClaudeSetupPanel />
         <PrivacyPanel />
         <Section title="Backups" className="md:col-span-2">

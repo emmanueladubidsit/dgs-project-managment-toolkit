@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { useAction } from "./queries";
 import type {
-  AddedProject, ApproveEdits, BatchResult, Discovery, ProjectsFolder, TrackerRefresh,
+  AddedProject, ApproveEdits, BatchResult, ClaudeSettings, Discovery, ProjectsFolder, TrackerRefresh,
   ClaudeSetup, CodeEvent, Connection, Adoption, CategoryTemplate, DocumentRoot, KnowledgeDetail, KnowledgeItem, KnowledgeVersion, MethodologyDetail,
   MethodologySummary, ProjectDeliverable, ProjectDocument, ScannedFile, SearchHit, Suggestion, VoiceNote, VoiceStatus,
 } from "./types";
@@ -202,10 +202,12 @@ export const useStartProject = () =>
   });
 export const useTrackerInstructions = () =>
   useQuery({ queryKey: ["tracker-instructions"], queryFn: () => api<{ claude_md: string; tracker_dir: string }>("/tracker/instructions"), staleTime: Infinity });
-export const useClaudeSettings = () => useQuery({ queryKey: ["claude-settings"], queryFn: () => api<{ allow_outbound: boolean }>("/claude/settings") });
+export const useClaudeSettings = () => useQuery({ queryKey: ["claude-settings"], queryFn: () => api<ClaudeSettings>("/claude/settings") });
 export const useSaveClaudeSettings = () =>
-  useAction((body: { allow_outbound: boolean }) => api<{ allow_outbound: boolean }>("/claude/settings", { method: "PUT", body }),
-    { success: (r) => (r.allow_outbound ? "Claude Code may now read workspace tasks." : "Workspace tasks are no longer shared with Claude Code.") });
+  useAction((body: Partial<ClaudeSettings>) => api<ClaudeSettings>("/claude/settings", { method: "PUT", body }).then((r) => ({ r, body })),
+    { success: ({ r, body }) => body.allow_file_writes !== undefined
+      ? (r.allow_file_writes ? "The browser extension may now write files (after your preview)." : "File writes from the browser extension are switched off.")
+      : (r.allow_outbound ? "Claude Code may now read workspace tasks." : "Workspace tasks are no longer shared with Claude Code.") });
 export const useClaudeSetup = () => useQuery({ queryKey: ["claude-setup"], queryFn: () => api<ClaudeSetup>("/claude/setup"), staleTime: Infinity });
 export const usePrivacyNames = () => useQuery({ queryKey: ["privacy-names"], queryFn: () => api<{ name: string; replacement: string }[]>("/privacy/names") });
 export const useSavePrivacyNames = () =>

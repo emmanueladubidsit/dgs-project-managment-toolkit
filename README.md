@@ -80,6 +80,9 @@ Then open **http://localhost:3010**.
 - **Projects folder and discovery** — one recommended folder for technical projects; **Discover
   projects** adds new folders found there, and **Start a new project** creates one with a tracker
   and CLAUDE.md.
+- **Keep AI answers (browser extension)** — use ChatGPT, Claude, Gemini or Copilot as usual; tick
+  the answers worth keeping and file them to a project (or a new one), and add code to project files
+  after a preview. No AI keys; nothing else is stored ([ADR 0011](docs/DECISIONS/0011-ai-tools-via-browser-extension.md)).
 - **Connected codebases and Claude Code sync** — connect each project's folder (read-only):
   commits, changed files and uncommitted changes appear on the project's Codebase tab; commits
   that mention a task suggest marking it done. Claude Code can list a project's open tasks and
@@ -114,6 +117,7 @@ Then open **http://localhost:3010**.
 ```
 backend/    FastAPI + SQLAlchemy + Alembic (Python 3.13, managed by uv)
 frontend/   Next.js 16 + TypeScript + Tailwind + shadcn/ui + TanStack Query
+extension/  "Keep to DGS" browser extension (load unpacked in Chrome/Edge)
 docs/       Product and technical documentation (the project's source of truth)
 docker-compose.yml   PostgreSQL 17 for local development
 prompt.md   The original product brief

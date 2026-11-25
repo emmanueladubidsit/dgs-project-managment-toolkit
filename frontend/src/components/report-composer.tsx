@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { MarkdownView } from "./markdown-view";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate, todayISO } from "@/lib/format";
 import { useDeleteReport, useGenerateReport, useProjects, useReports, useSaveReport, useUpdateReport } from "@/lib/queries";
 import type { Report, ReportDraft, ReportKind } from "@/lib/types";
@@ -65,7 +67,7 @@ export function ReportComposer({ projectId }: { projectId?: string }) {
             <FileText /> {generate.isPending ? "Generating…" : "Generate"}
           </Button>
         </form>
-        <p className="mt-2 text-xs text-muted-foreground">Reports are built only from tasks, activity and updates stored in the workspace. Empty sections say “None recorded” rather than inventing content.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Reports are built only from tasks, activity and updates stored in the workspace. Sections with nothing recorded are left out and listed in one closing line, so nothing is invented. Edit the text on the Edit tab; Word, PDF and slides use the same content.</p>
       </Section>
 
       {draft && (
@@ -73,8 +75,19 @@ export function ReportComposer({ projectId }: { projectId?: string }) {
           actions={<Button size="sm" variant="ghost" onClick={() => setDraft(null)}>Close</Button>}>
           <div className="space-y-3">
             <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} aria-label="Report title" />
-            <Textarea value={draft.content} onChange={(e) => setDraft({ ...draft, content: e.target.value })} rows={24}
-              className="font-mono text-sm" aria-label="Report content (Markdown)" />
+            <Tabs defaultValue="preview">
+              <TabsList>
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+              </TabsList>
+              <TabsContent value="preview">
+                <MarkdownView source={draft.content} className="max-h-[70vh] overflow-y-auto rounded-lg border bg-card px-5 py-4 text-sm leading-relaxed" />
+              </TabsContent>
+              <TabsContent value="edit">
+                <Textarea value={draft.content} onChange={(e) => setDraft({ ...draft, content: e.target.value })} rows={24}
+                  className="font-mono text-sm" aria-label="Report content (Markdown)" />
+              </TabsContent>
+            </Tabs>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => {
                 if (draft.id) update.mutate({ id: draft.id, title: draft.title, content: draft.content });

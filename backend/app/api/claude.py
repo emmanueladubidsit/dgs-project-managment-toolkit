@@ -270,6 +270,7 @@ def setup(db: Session = Depends(get_db)):
     )
     return {
         "token": token,
+        "extension_dir": str(BACKEND_DIR.parent / "extension"),  # browser extension (ADR 0011)
         "hook_settings": hooks,
         "mcp_command": mcp_cmd,
         "claude_md": (
@@ -323,21 +324,32 @@ def outbound_allowed(db: Session) -> bool:
 
 
 class ClaudeSettingsIn(BaseModel):
-    allow_outbound: bool
+    allow_outbound: bool | None = None
+    # Browser extension "Add to file" (ADR 0011); off by default.
+    allow_file_writes: bool | None = None
+
+
+def _settings_out(db: Session) -> dict:
+    row = db.get(SystemSetting, "claude")
+    value = (row.value or {}) if row else {}
+    return {
+        "allow_outbound": bool(value.get("allow_outbound")),
+        "allow_file_writes": bool(value.get("allow_file_writes")),
+    }
 
 
 @router.get("/claude/settings")
 def claude_settings(db: Session = Depends(get_db)):
-    return {"allow_outbound": outbound_allowed(db)}
+    return _settings_out(db)
 
 
 @router.put("/claude/settings")
 def update_claude_settings(body: ClaudeSettingsIn, db: Session = Depends(get_db)):
     row = db.get(SystemSetting, "claude") or SystemSetting(key="claude", value={})
-    row.value = {**(row.value or {}), "allow_outbound": body.allow_outbound}
+    row.value = {**(row.value or {}), **body.model_dump(exclude_none=True)}
     db.add(row)
     db.commit()
-    return {"allow_outbound": body.allow_outbound}
+    return _settings_out(db)
 
 
 @router.get("/claude/context", dependencies=[Depends(require_token)])

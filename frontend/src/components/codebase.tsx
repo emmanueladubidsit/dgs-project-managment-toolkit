@@ -50,8 +50,8 @@ function ConnectForm({ projectId, current }: { projectId: string; current?: Conn
 
 function EventItem({ e }: { e: CodeEvent }) {
   const save = useSaveEventAsUpdate();
-  const icon = e.kind === "progress_file" ? <FolderGit2 className="size-4" aria-label="Progress file" /> : e.kind === "commit" ? <GitCommitHorizontal className="size-4" aria-label="Commit" /> : e.kind === "files" ? <FolderGit2 className="size-4" aria-label="File changes" /> : <Bot className="size-4" aria-label="Claude Code" />;
-  const label = { commit: "Commit", files: "Files changed", claude_session: "Claude Code session", claude_task: "Claude reported", progress_file: "Progress file" }[e.kind];
+  const icon = e.kind === "progress_file" ? <FolderGit2 className="size-4" aria-label="Progress file" /> : e.kind === "commit" ? <GitCommitHorizontal className="size-4" aria-label="Commit" /> : e.kind === "files" || e.kind === "file_written" ? <FolderGit2 className="size-4" aria-label="File changes" /> : <Bot className="size-4" aria-label="Claude Code" />;
+  const label = { commit: "Commit", files: "Files changed", claude_session: "Claude Code session", claude_task: "Claude reported", progress_file: "Progress file", file_written: "Written from the browser extension" }[e.kind];
   return (
     <li className="flex gap-3 py-2.5">
       <span className="mt-0.5 text-muted-foreground">{icon}</span>

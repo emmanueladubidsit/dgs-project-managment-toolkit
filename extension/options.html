@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <title>Keep to DGS Workspace</title>
+  <style>
+    body { font: 14px/1.45 system-ui, sans-serif; margin: 16px; min-width: 320px; color: #1f2328; }
+    label { display: block; font-weight: 600; margin-top: 12px; }
+    input { width: 100%; box-sizing: border-box; padding: 6px 8px; margin-top: 4px; border: 1px solid #c8ccd1; border-radius: 6px; }
+    button { margin-top: 14px; padding: 6px 14px; border: 0; border-radius: 6px; background: #1d4ed8; color: #fff; font-weight: 600; cursor: pointer; }
+    p.hint { color: #57606a; font-size: 12px; margin: 4px 0 0; }
+    #status { margin-top: 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1 style="font-size:16px;margin:0">Keep to DGS Workspace</h1>
+  <p class="hint">Copy the token from the workspace: Administration → Browser extension.</p>
+  <label for="base">Workspace address</label>
+  <input id="base" placeholder="http://localhost:8010" />
+  <label for="token">Workspace token</label>
+  <input id="token" type="password" autocomplete="off" />
+  <button id="save">Save and test</button>
+  <div id="status" role="status"></div>
+  <script src="options.js"></script>
+</body>
+</html>
