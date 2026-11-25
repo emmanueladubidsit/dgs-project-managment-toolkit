@@ -36,7 +36,7 @@ DATA_TABLES = [
     "project_methodologies", "deliverable_definitions", "methodology_activities",
     "methodology_stages", "methodologies", "document_task_links", "project_documents",
     "document_roots", "suggestions", "voice_notes", "system_settings", "ai_interactions",
-    "code_events", "project_connections",
+    "tracker_entries", "code_events", "project_connections",
 ]  # fmt: skip
 
 

@@ -56,3 +56,4 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 [tool.ruff.lint.per-file-ignores]
 "app/seed_data.py" = ["E501", "E741"]  # prose content; short M/R/O constants aid readability
 "app/services/ai/features.py" = ["E501"]  # prompt prose
+"tests/test_tracker*.py" = ["E501"]  # Markdown tracker fixtures keep real table rows on one line

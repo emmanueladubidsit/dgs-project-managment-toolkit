@@ -18,6 +18,15 @@ Last updated: **21 November 2026** (second session). Update this file at the end
 
 ## Session log
 
+### 23 November 2026 — dev overlay fix
+
+- Fixed: every page showed a dev-only “Could not validate `instant`” overlay. Pages deliberately
+  render in the browser only (`BrowserOnly` in `app-shell.tsx`), which Next 16's implicit
+  instant-navigation check cannot prerender. `next.config.ts` now sets
+  `experimental.instantInsights.validationLevel: "manual-warning"`, so only segments that export
+  `instant` are validated. Production builds were never affected.
+- Verified: all ten main routes load in `next dev` with no errors; type-check passes.
+
 ### 21 November 2026 (fifth session) — policy-safe local Claude sync
 
 - Claude Code progress now comes from progress files already in each connected folder, read

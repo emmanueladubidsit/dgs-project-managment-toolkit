@@ -108,6 +108,7 @@ lives in the Docker volume `dgs_pgdata`; `docker compose down` keeps it, `docker
 | `address already in use` | Another program holds the port. `lsof -nP -iTCP:<port> -sTCP:LISTEN` shows which; stop it or change the port (see Ports). |
 | `next dev`: “Another next dev server is already running” | A previous dev server for this folder is still running. Stop it (it prints the PID), or use `make web-prod`. |
 | Docker: `mkdir /host_mnt/...: operation not permitted` | macOS blocks Docker from folders on the Desktop. The Compose file deliberately uses no bind mounts; do not add any here. |
+| Dev overlay: “Could not validate `instant`” on every page | Expected only if `experimental.instantInsights` was removed from `next.config.ts`. Pages render in the browser only, so implicit instant validation is set to `manual-warning`. Restart `make web` after changing the config. |
 | Database connection refused | `make db`, then `docker ps` should list `dgs-workspace-db`. |
 | Recording says the microphone is blocked | Allow microphone access for `localhost:3010` in the browser's site settings. |
 | “Transcription unavailable” | Run `make voice`, restart the API, or type/paste text instead. |

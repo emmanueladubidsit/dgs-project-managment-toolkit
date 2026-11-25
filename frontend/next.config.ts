@@ -6,6 +6,12 @@ const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8010";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Workspace pages render in the browser only (BrowserOnly in app-shell.tsx), so the default
+    // implicit instant-navigation check fails on every route ("Could not validate `instant`").
+    // Validate only segments that explicitly export `instant`.
+    instantInsights: { validationLevel: "manual-warning" },
+  },
   turbopack: {
     rules: {
       "*.css": {

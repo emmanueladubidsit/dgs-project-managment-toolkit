@@ -18,6 +18,7 @@ class SuggestionKind(StrEnum):
     BLOCKER = "blocker"
     DECISION = "decision"
     PROGRESS = "progress"
+    MILESTONE = "milestone"  # create or update a milestone (from a project tracker)
 
 
 class SuggestionStatus(StrEnum):

@@ -406,11 +406,19 @@ export interface VoiceNote {
   pending_suggestions: number;
 }
 
-export type SuggestionKind = "task" | "task_update" | "blocker" | "decision" | "progress";
+export type SuggestionKind = "task" | "task_update" | "blocker" | "decision" | "progress" | "milestone";
+/** Fields a project-tracker suggestion carries (generator "tracker"; see ADR 0010). */
+export interface TrackerPayload {
+  tracker_key?: string; tracker_kind?: "done" | "status" | "plan" | "day"; tracker_file?: string; section?: string;
+  item_date?: string | null; original_date?: string | null; carried_from?: string | null; entry_date?: string;
+  milestone_key?: string | null; milestone_id?: string | null; milestone_title?: string | null;
+  tracker_title?: string; current_status?: TaskStatus; scheduled_date?: string | null; current_scheduled_date?: string | null; task_has_milestone?: boolean;
+  code?: string | null; due_date?: string | null; description?: string | null;
+}
 export interface Suggestion {
   id: string; kind: SuggestionKind; status: "pending" | "approved" | "rejected" | "deferred"; source_type: string;
   source_id: string | null; project_id: string | null; project_name: string | null; generator: string;
-  payload: { title?: string; priority?: Priority; estimate_hours?: number; acceptance_criteria?: string; parent_id?: string; task_id?: string; status?: TaskStatus }; evidence: string | null; duplicate_of_task_id: string | null;
+  payload: { title?: string; priority?: Priority; estimate_hours?: number; acceptance_criteria?: string; parent_id?: string; task_id?: string; status?: TaskStatus | MilestoneStatus } & TrackerPayload; evidence: string | null; duplicate_of_task_id: string | null;
   duplicate_of_title: string | null; created_task_id: string | null; created_work_log_id: string | null;
 }
 
@@ -420,7 +428,24 @@ export interface Connection {
   accept_claude: boolean; auto_sync: boolean; branch: string | null; head: string | null; uncommitted_changes: number;
   last_synced_at: string | null; last_activity_at: string | null; last_error: string | null;
   progress_patterns: string[]; progress_files_tracked: number;
+  tracker_file: string | null; tracker_read_at: string | null; tracker_warnings: string[];
 }
+export interface TrackerRefresh {
+  file: string | null; milestones: number; tasks: number; updates: number; work_logs: number;
+  already_reflected: number; warnings: string[]; pending: number;
+}
+export interface ApproveEdits {
+  title?: string; status?: string; progress?: number; milestone_id?: string | null; workstream_id?: string | null;
+  start_date?: string | null; due_date?: string | null; scheduled_date?: string | null; description?: string; entry_date?: string;
+  allow_duplicate?: boolean;
+}
+export interface BatchResult { approved: number; failed: number; results: { id: string; ok: boolean; error?: string; code?: string }[] }
+export interface ProjectsFolder { root: string; exists: boolean; source?: "settings" | "default" }
+export interface DiscoveredProject {
+  path: string; relative_path: string; name: string; is_git: boolean; has_tracker: boolean; tracker_file: string | null; modified_at: string;
+}
+export interface Discovery extends ProjectsFolder { candidates: DiscoveredProject[]; connected: number }
+export interface AddedProject { project_id: string; name: string; pending: number; path?: string }
 export interface CodeEvent {
   id: string; kind: "commit" | "claude_session" | "claude_task" | "files" | "progress_file"; ref: string; title: string;
   summary: string | null; detail: { files?: string[]; file_count?: number; branch?: string; turns?: number; ended?: boolean; status?: string; file?: string; status_changes?: string[]; checked?: string[] }; occurred_at: string;

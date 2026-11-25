@@ -53,7 +53,9 @@ STATUS_WORDS = [
     ),
     (
         "completed",
-        re.compile(r"(?i)(✅|☑|\b(done|complete[d]?|closed|fixed|resolved|shipped|merged)\b)"),
+        re.compile(
+            r"(?i)(✅|☑|\b(done|complete[d]?|closed|fixed|resolved|shipped|merged|verified)\b)"
+        ),
     ),
     ("in_progress", re.compile(r"(?i)(⏳|🟡|\b(in progress|in-progress|ongoing|started|wip)\b)")),
     ("todo", re.compile(r"(?i)(❌|\b(open|to ?do|planned|backlog)\b)")),

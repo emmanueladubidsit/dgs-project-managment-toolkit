@@ -5,7 +5,7 @@ import logging
 import shutil
 import tempfile
 import uuid
-from datetime import date
+from datetime import date, datetime, time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, Response, UploadFile
@@ -17,11 +17,11 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_db
 from app.errors import AppError, bad_request, conflict, not_found
-from app.models import Milestone, Project, Suggestion, Task, VoiceNote, WorkLog
-from app.models.enums import Priority, TaskStatus, WorkLogKind
+from app.models import Project, Suggestion, Task, VoiceNote, WorkLog
+from app.models.enums import MilestoneStatus, Priority, TaskStatus, WorkLogKind
 from app.models.voice import SuggestionKind, SuggestionStatus
-from app.services import text_tools
-from app.services.tasks import now, record, update_task
+from app.services import text_tools, tracker_import
+from app.services.tasks import now, record, update_task, validate_refs
 from app.services.transcription import TranscriptionUnavailable, get_provider
 
 router = APIRouter(tags=["voice"])
@@ -129,13 +129,30 @@ class SuggestionUpdate(BaseModel):
 
 
 class ApproveIn(BaseModel):
+    """Optional edits applied on approval. Omitted fields keep the suggested values."""
+
     title: str | None = Field(default=None, min_length=1, max_length=300)
     priority: Priority | None = None
     project_id: uuid.UUID | None = None
     milestone_id: uuid.UUID | None = None
+    workstream_id: uuid.UUID | None = None
+    # Task status for task/task_update suggestions; milestone status for milestone suggestions.
+    status: str | None = Field(default=None, max_length=32)
+    progress: int | None = Field(default=None, ge=0, le=100)
+    start_date: date | None = None
     due_date: date | None = None
+    scheduled_date: date | None = None
+    description: str | None = Field(default=None, max_length=5000)
     entry_date: date | None = None
     allow_duplicate: bool = False
+
+
+class BatchApproveItem(ApproveIn):
+    id: uuid.UUID
+
+
+class BatchApproveIn(BaseModel):
+    items: list[BatchApproveItem] = Field(min_length=1, max_length=500)
 
 
 # ---------------------------------------------------------------- helpers
@@ -494,21 +511,75 @@ def edit_suggestion(sid: uuid.UUID, body: SuggestionUpdate, db: Session = Depend
     return _sugg_out(db, s)
 
 
-@router.post("/suggestions/{sid}/approve", response_model=SuggestionOut)
-def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
-    s = _pending(db, sid)
+def _task_status(value: str | None, default: str) -> TaskStatus:
+    try:
+        return TaskStatus(value or default)
+    except ValueError as e:
+        raise bad_request(f"Unknown task status “{value}”.") from e
+
+
+def _done_at(day: str | None):
+    """Completion time for work the tracker dates to a past working day (end of that day)."""
+    if not day:
+        return None
+    d = date.fromisoformat(day)
+    if d >= date.today():
+        return None
+    return datetime.combine(d, time(17, 0)).astimezone()
+
+
+def _approve(db: Session, s: Suggestion, body: ApproveIn) -> None:
+    """Apply one suggestion (with the reviewer's edits). Does not commit."""
+    p = s.payload or {}
+    sent = body.model_fields_set
     if s.kind == SuggestionKind.TASK_UPDATE:
-        task = db.get(Task, uuid.UUID(s.payload["task_id"])) if s.payload.get("task_id") else None
+        task = db.get(Task, uuid.UUID(p["task_id"])) if p.get("task_id") else None
         if not task or task.archived_at:
             raise bad_request("The task no longer exists.")
-        changes = {"status": TaskStatus(s.payload.get("status", "completed"))}
+        changes: dict = {"status": _task_status(body.status, p.get("status", "completed"))}
+        for f in ("title", "milestone_id", "workstream_id", "start_date", "due_date"):
+            if f in sent and getattr(body, f) is not None:
+                changes[f] = getattr(body, f)
+        if "scheduled_date" in sent:
+            changes["scheduled_date"] = body.scheduled_date
+        elif p.get("scheduled_date"):  # the tracker's planned day (shown for review first)
+            changes["scheduled_date"] = date.fromisoformat(p["scheduled_date"])
+        if "milestone_id" not in changes and task.milestone_id is None:
+            ms = tracker_import.resolve_milestone(db, task.project_id, p)
+            if ms:
+                changes["milestone_id"] = ms
+        if body.progress is not None:
+            changes["progress"] = body.progress
+        was_done = task.status == TaskStatus.COMPLETED
         update_task(db, task, changes)
+        if task.status == TaskStatus.COMPLETED and not was_done:
+            task.completed_at = _done_at(p.get("item_date")) or task.completed_at
         record(db, task, "updated", {"source": [None, f"Approved suggestion from {s.generator}"]})
         s.created_task_id = task.id
+        tracker_import.record_approval(db, s, task_id=task.id)
         s.status, s.reviewed_at = SuggestionStatus.APPROVED, now()
-        db.commit()
-        return _sugg_out(db, s)
-    title = (body.title or s.payload.get("title", "")).strip()
+        return
+    if s.kind == SuggestionKind.MILESTONE:
+        if not s.project_id:
+            raise bad_request("Choose a project for this milestone.")
+        status = body.status or p.get("status") or "planned"
+        try:
+            MilestoneStatus(status)
+        except ValueError as e:
+            raise bad_request(f"Unknown milestone status “{status}”.") from e
+        tracker_import.apply_milestone(
+            db,
+            s,
+            {
+                "title": body.title,
+                "status": status,
+                "due_date": body.due_date.isoformat() if body.due_date else None,
+                "description": body.description,
+            },
+        )
+        s.status, s.reviewed_at = SuggestionStatus.APPROVED, now()
+        return
+    title = (body.title or p.get("title", "")).strip()
     project_id = body.project_id or s.project_id
     if not title:
         raise bad_request("A title is required.")
@@ -522,47 +593,69 @@ def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
                 "reject the suggestion, or approve it as a duplicate on purpose.",
                 code="possible_duplicate",
             )
-        if body.milestone_id:
-            ms = db.get(Milestone, body.milestone_id)
-            if not ms or ms.project_id != project_id:
-                raise bad_request("Milestone does not belong to this project.")
+        milestone_id = body.milestone_id or tracker_import.resolve_milestone(db, project_id, p)
+        validate_refs(
+            db, project_id, {"milestone_id": milestone_id, "workstream_id": body.workstream_id}
+        )
         max_pos = db.scalar(select(func.max(Task.position)).where(Task.project_id == project_id))
         parent = None
-        if s.payload.get("parent_id"):
-            parent = db.get(Task, uuid.UUID(s.payload["parent_id"]))
+        if p.get("parent_id"):
+            parent = db.get(Task, uuid.UUID(p["parent_id"]))
             if not parent or parent.project_id != project_id:
                 raise bad_request("The parent task no longer exists in this project.")
-        origin = "an AI suggestion" if s.generator.startswith("ai:") else "a voice/text note"
+        origin = (
+            "an AI suggestion"
+            if s.generator.startswith("ai:")
+            else "the project tracker"
+            if s.generator == tracker_import.GENERATOR
+            else "a voice/text note"
+        )
+        status = _task_status(body.status, p.get("status") or "todo")
+        scheduled = body.scheduled_date if "scheduled_date" in sent else p.get("scheduled_date")
         t = Task(
             project_id=project_id,
             title=title,
-            priority=body.priority or Priority(s.payload.get("priority", "medium")),
-            milestone_id=body.milestone_id or (parent.milestone_id if parent else None),
-            workstream_id=parent.workstream_id if parent else None,
+            status=status,
+            priority=body.priority or Priority(p.get("priority", "medium")),
+            milestone_id=milestone_id or (parent.milestone_id if parent else None),
+            workstream_id=body.workstream_id or (parent.workstream_id if parent else None),
             parent_id=parent.id if parent else None,
+            start_date=body.start_date,
             due_date=body.due_date,
-            estimate_hours=s.payload.get("estimate_hours"),
-            acceptance_criteria=s.payload.get("acceptance_criteria"),
-            description=f"From {origin}: “{s.evidence}”" if s.evidence else None,
+            scheduled_date=date.fromisoformat(scheduled)
+            if isinstance(scheduled, str)
+            else scheduled,
+            estimate_hours=p.get("estimate_hours"),
+            acceptance_criteria=p.get("acceptance_criteria"),
+            description=body.description
+            or (f"From {origin}: “{s.evidence}”" if s.evidence else None),
+            progress=body.progress or 0,
             position=(max_pos or 0) + 1000,
             labels=[],
         )
+        if status == TaskStatus.COMPLETED:
+            t.progress = 100
+            t.completed_at = _done_at(p.get("item_date")) or now()
         db.add(t)
         db.flush()
         record(
             db, t, "created", {"title": [None, t.title], "source": [None, "Approved suggestion"]}
         )
         s.created_task_id = t.id
+        tracker_import.record_approval(db, s, task_id=t.id)
     else:
         kind = {
             SuggestionKind.BLOCKER: WorkLogKind.BLOCKER,
             SuggestionKind.DECISION: WorkLogKind.DECISION,
             SuggestionKind.PROGRESS: WorkLogKind.PROGRESS,
         }[s.kind]
+        entry = body.entry_date or (
+            date.fromisoformat(p["entry_date"]) if p.get("entry_date") else date.today()
+        )
         log = WorkLog(
-            entry_date=body.entry_date or date.today(),
+            entry_date=entry,
             kind=kind,
-            summary=s.evidence or title,
+            summary=body.description or s.evidence or title,
             project_id=project_id,
         )
         db.add(log)
@@ -570,8 +663,40 @@ def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
         s.created_work_log_id = log.id
     s.project_id = project_id
     s.status, s.reviewed_at = SuggestionStatus.APPROVED, now()
+
+
+@router.post("/suggestions/{sid}/approve", response_model=SuggestionOut)
+def approve(sid: uuid.UUID, body: ApproveIn, db: Session = Depends(get_db)):
+    s = _pending(db, sid)
+    _approve(db, s, body)
     db.commit()
     return _sugg_out(db, s)
+
+
+@router.post("/suggestions/approve-batch")
+def approve_batch(body: BatchApproveIn, db: Session = Depends(get_db)):
+    """Approve several suggestions at once. Milestones go first so tasks can join them. Each
+    item succeeds or fails on its own; failures (e.g. a possible duplicate) are reported."""
+    kinds = {
+        s.id: s.kind
+        for s in db.scalars(select(Suggestion).where(Suggestion.id.in_([i.id for i in body.items])))
+    }
+    order = sorted(body.items, key=lambda i: kinds.get(i.id) != SuggestionKind.MILESTONE)
+    results = []
+    for item in order:
+        try:
+            with db.begin_nested():
+                s = _pending(db, item.id)
+                _approve(db, s, ApproveIn(**item.model_dump(exclude={"id"}, exclude_unset=True)))
+            results.append({"id": str(item.id), "ok": True})
+        except AppError as e:
+            results.append({"id": str(item.id), "ok": False, "error": e.message, "code": e.code})
+    db.commit()
+    return {
+        "approved": sum(r["ok"] for r in results),
+        "failed": sum(not r["ok"] for r in results),
+        "results": results,
+    }
 
 
 @router.post("/suggestions/{sid}/reject", response_model=SuggestionOut)

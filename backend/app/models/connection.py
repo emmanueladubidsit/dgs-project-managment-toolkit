@@ -1,9 +1,9 @@
 """A project's connected codebase folder, and activity from git and Claude Code."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,8 +31,36 @@ class ProjectConnection(IdMixin, TimestampMixin, Base):
     # Local progress records read from the folder (globs relative to it), and their last state.
     progress_patterns: Mapped[list] = mapped_column(JSONB, default=list)
     file_state: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # Project tracker (docs/project-management/PROGRESS-AND-PLAN-*.md): last file read and when.
+    tracker_file: Mapped[str | None] = mapped_column(String(500))
+    tracker_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    tracker_warnings: Mapped[list] = mapped_column(JSONB, default=list)
 
     project = relationship("Project", lazy="joined")
+
+
+class TrackerEntry(IdMixin, TimestampMixin, Base):
+    """One item read from a project tracker, so a refresh only proposes what is new or whose
+    status changed. `status` is the status last proposed for review."""
+
+    __tablename__ = "tracker_entries"
+    __table_args__ = (UniqueConstraint("project_id", "key", name="uq_tracker_entry_key"),)
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    key: Mapped[str] = mapped_column(String(40))
+    kind: Mapped[str] = mapped_column(String(20))  # done | status | plan | milestone | day
+    title: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str | None] = mapped_column(String(32))
+    item_date: Mapped[date | None] = mapped_column(Date)
+    suggestion_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("suggestions.id", ondelete="SET NULL")
+    )
+    task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tasks.id", ondelete="SET NULL"))
+    milestone_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("milestones.id", ondelete="SET NULL")
+    )
 
 
 class CodeEvent(IdMixin, Base):

@@ -11,11 +11,12 @@ import { DocumentsList } from "@/components/documents";
 import { KnowledgeFormDialog, VerificationBadge } from "@/components/knowledge";
 import { ProjectMethodologies } from "@/components/methodology";
 import { MilestoneFormDialog, MilestoneList, WorkstreamManager } from "@/components/milestones";
-import { useKnowledgeList, usePromoteWorkLog } from "@/lib/queries-library";
+import { useKnowledgeList, usePromoteWorkLog, useSuggestions } from "@/lib/queries-library";
 import { ProjectFormDialog } from "@/components/project-form-dialog";
 import { ReportComposer } from "@/components/report-composer";
 import { describeActivity } from "@/components/task-sheet";
 import { TaskFormDialog } from "@/components/task-form-dialog";
+import { TrackerPanel } from "@/components/tracker";
 import { KanbanBoard, TaskFilterBar, TaskRow, TaskTable } from "@/components/task-views";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +40,8 @@ function Workspace({ project: p }: { project: Project }) {
   const del = useDeleteProject();
   const [newTask, setNewTask] = useState(false);
   const [tab, setTab] = useState("overview");
+  const suggestions = useSuggestions({ status: "pending", project_id: p.id });
+  const trackerPending = (suggestions.data ?? []).filter((s) => s.generator === "tracker").length;
   return (
     <>
       <Link href="/projects" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> Projects</Link>
@@ -83,6 +86,7 @@ function Workspace({ project: p }: { project: Project }) {
           <TabsTrigger value="backlog">Backlog</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="workstreams">Workstreams</TabsTrigger>
+          <TabsTrigger value="tracker">Tracker{trackerPending > 0 && <span className="ml-1.5 rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">{trackerPending}</span>}</TabsTrigger>
           <TabsTrigger value="codebase">Codebase</TabsTrigger>
           <TabsTrigger value="methodology">Methodology</TabsTrigger>
           <TabsTrigger value="plan">Plan check</TabsTrigger>
@@ -96,6 +100,7 @@ function Workspace({ project: p }: { project: Project }) {
         <TabsContent value="backlog"><ProjectTasks projectId={p.id} mode="list" /></TabsContent>
         <TabsContent value="milestones"><ProjectMilestones projectId={p.id} /></TabsContent>
         <TabsContent value="workstreams"><Section title="Workstreams"><WorkstreamManager projectId={p.id} /></Section></TabsContent>
+        <TabsContent value="tracker"><TrackerPanel projectId={p.id} /></TabsContent>
         <TabsContent value="codebase"><CodebasePanel projectId={p.id} /></TabsContent>
         <TabsContent value="methodology"><ProjectMethodologies projectId={p.id} /></TabsContent>
         <TabsContent value="plan"><PlanCheckView projectId={p.id} /></TabsContent>

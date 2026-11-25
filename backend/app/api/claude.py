@@ -91,6 +91,9 @@ class ConnectionOut(BaseModel):
     last_error: str | None
     progress_patterns: list[str]
     progress_files_tracked: int
+    tracker_file: str | None = None
+    tracker_read_at: str | None = None
+    tracker_warnings: list[str] = []
 
 
 class EventOut(BaseModel):
@@ -122,6 +125,9 @@ def _out(c: ProjectConnection) -> ConnectionOut:
         last_error=c.last_error,
         progress_patterns=c.progress_patterns or [],
         progress_files_tracked=len(c.file_state or {}),
+        tracker_file=c.tracker_file,
+        tracker_read_at=iso(c.tracker_read_at),
+        tracker_warnings=c.tracker_warnings or [],
     )
 
 

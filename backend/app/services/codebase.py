@@ -273,6 +273,11 @@ def sync_connection(db: Session, conn: ProjectConnection) -> dict:
         conn.last_error = str(e)
     conn.last_synced_at = now()
     db.commit()
+    from app.services import tracker_import  # local import: tracker_import uses this module
+
+    t = tracker_import.refresh_tracker(db, conn)
+    result["tracker_suggestions"] = t["milestones"] + t["tasks"] + t["updates"] + t["work_logs"]
+    result["suggestions"] += result["tracker_suggestions"]
     return result
 
 

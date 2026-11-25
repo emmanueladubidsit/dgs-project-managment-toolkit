@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api, errorMessage } from "./api";
 import { useAction } from "./queries";
 import type {
+  AddedProject, ApproveEdits, BatchResult, Discovery, ProjectsFolder, TrackerRefresh,
   ClaudeSetup, CodeEvent, Connection, Adoption, CategoryTemplate, DocumentRoot, KnowledgeDetail, KnowledgeItem, KnowledgeVersion, MethodologyDetail,
   MethodologySummary, ProjectDeliverable, ProjectDocument, ScannedFile, SearchHit, Suggestion, VoiceNote, VoiceStatus,
 } from "./types";
@@ -173,6 +174,34 @@ export const useSyncNow = (projectId: string) =>
     { success: (r) => `Synced: ${r.new_commits} new commit(s), ${r.suggestions} suggestion(s).` });
 export const useSaveEventAsUpdate = () =>
   useAction((id: string) => api<{ work_log_id: string }>(`/code-events/${id}/save-as-update`, { method: "POST" }), { success: "Recorded as a progress update." });
+// ---------------------------------------------------------------- project tracker & discovery (ADR 0010)
+export const useRefreshTracker = (projectId: string) =>
+  useAction(() => api<TrackerRefresh>(`/projects/${projectId}/tracker/refresh`, { method: "POST" }), {
+    success: (r) => {
+      if (!r.file) return "No tracker file found in this project's folder.";
+      const n = r.milestones + r.tasks + r.updates + r.work_logs;
+      return n ? `Tracker read: ${n} new item(s) to review.` : "Tracker read: nothing new since the last refresh.";
+    },
+  });
+export const useApproveBatch = () =>
+  useAction((items: ({ id: string } & ApproveEdits)[]) => api<BatchResult>("/suggestions/approve-batch", { method: "POST", body: { items } }), {
+    success: (r) => (r.failed ? `Approved ${r.approved}; ${r.failed} need your attention.` : `Approved ${r.approved}.`),
+  });
+export const useProjectsFolder = () => useQuery({ queryKey: ["projects-folder"], queryFn: () => api<ProjectsFolder>("/settings/projects") });
+export const useSaveProjectsFolder = () =>
+  useAction((body: { root: string; create?: boolean }) => api<ProjectsFolder>("/settings/projects", { method: "PUT", body }), { success: "Projects folder saved." });
+export const useDiscovery = (enabled: boolean) =>
+  useQuery({ queryKey: ["project-discovery"], queryFn: () => api<Discovery>("/project-discovery"), enabled });
+export const useAddDiscovered = () =>
+  useAction((body: { path: string; name?: string }) => api<AddedProject>("/project-discovery/add", { method: "POST", body }), {
+    success: (r) => `“${r.name}” added and connected${r.pending ? ` — ${r.pending} tracker item(s) to review` : ""}.`,
+  });
+export const useStartProject = () =>
+  useAction((body: { name: string; folder_name?: string; description?: string }) => api<AddedProject>("/project-discovery/start", { method: "POST", body }), {
+    success: (r) => `“${r.name}” created with a tracker and CLAUDE.md.`,
+  });
+export const useTrackerInstructions = () =>
+  useQuery({ queryKey: ["tracker-instructions"], queryFn: () => api<{ claude_md: string; tracker_dir: string }>("/tracker/instructions"), staleTime: Infinity });
 export const useClaudeSettings = () => useQuery({ queryKey: ["claude-settings"], queryFn: () => api<{ allow_outbound: boolean }>("/claude/settings") });
 export const useSaveClaudeSettings = () =>
   useAction((body: { allow_outbound: boolean }) => api<{ allow_outbound: boolean }>("/claude/settings", { method: "PUT", body }),

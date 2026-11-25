@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PRIORITIES, PRIORITY_LABEL, STATUS_LABEL, todayISO } from "@/lib/format";
 import { useProjects } from "@/lib/queries";
 import { useSuggestionAction, useSuggestions } from "@/lib/queries-library";
-import type { Suggestion } from "@/lib/types";
+import type { Suggestion, TaskStatus } from "@/lib/types";
 import { SelectField } from "./form-fields";
 import { useOpenTask } from "./task-sheet";
 
-const KIND_LABEL = { task: "Task", task_update: "Task update", blocker: "Blocker", decision: "Decision", progress: "Progress" };
+const KIND_LABEL = { task: "Task", task_update: "Task update", blocker: "Blocker", decision: "Decision", progress: "Progress", milestone: "Milestone" };
 const SOURCE_LABEL = (g: string) => (g === "claude" ? "from Claude Code" : g === "git" ? "from a commit" : g.startsWith("ai:") ? "suggested by AI" : null);
 
 /** Review one suggestion: edit, then approve (creates the task/update), reject or defer. */
@@ -32,7 +32,7 @@ export function SuggestionCard({ s, noteProjectId, hideProject }: { s: Suggestio
         {s.status === "deferred" && <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3" /> Deferred</span>}
       </div>
       {s.kind === "task_update" ? (
-        <p className="text-sm">Mark <button className="font-medium underline-offset-2 hover:underline" onClick={() => s.payload.task_id && openTask(s.payload.task_id)}>“{s.payload.title}”</button> as <strong>{STATUS_LABEL[s.payload.status ?? "completed"]}</strong></p>
+        <p className="text-sm">Mark <button className="font-medium underline-offset-2 hover:underline" onClick={() => s.payload.task_id && openTask(s.payload.task_id)}>“{s.payload.title}”</button> as <strong>{STATUS_LABEL[(s.payload.status ?? "completed") as TaskStatus]}</strong></p>
       ) : s.kind === "task" ? (
         <div className="space-y-2">
           <Input value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Task title" />
@@ -62,11 +62,12 @@ export function SuggestionCard({ s, noteProjectId, hideProject }: { s: Suggestio
   );
 }
 
-/** Pending suggestions for a project, with “Approve all” for task updates. */
+/** Pending suggestions for a project, with “Approve all” for task updates. Tracker items are
+ * reviewed on the project's Tracker tab, so they are left out unless `sources` asks for them. */
 export function PendingReview({ projectId, title = "Waiting for your review", sources }: { projectId?: string; title?: string; sources?: string[] }) {
   const q = useSuggestions({ status: "pending", project_id: projectId });
   const act = useSuggestionAction();
-  const items = (q.data ?? []).filter((s) => !sources || sources.includes(s.generator));
+  const items = (q.data ?? []).filter((s) => (sources ? sources.includes(s.generator) : s.generator !== "tracker"));
   const updates = items.filter((s) => s.kind === "task_update");
   if (!items.length) return null;
   return (

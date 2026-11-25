@@ -16,6 +16,7 @@ from app.api import (
     reports,
     system,
     tasks,
+    tracker,
     voice,
 )
 from app.config import get_settings
@@ -91,5 +92,6 @@ for module in (
     ai,
     exports,
     claude,
+    tracker,
 ):
     app.include_router(module.router, prefix="/api")

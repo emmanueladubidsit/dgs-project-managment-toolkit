@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ai_api_key: str = ""
     # Connected codebases: background sync interval (0 disables the background loop).
     sync_interval_seconds: int = 180
+    # Recommended folder for technical projects; "Discover projects" scans it. Overridable in
+    # Administration (stored as the "projects" system setting).
+    projects_root: str = "~/Projects"
 
     @property
     def cors_origin_list(self) -> list[str]:

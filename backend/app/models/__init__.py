@@ -1,4 +1,4 @@
-from app.models.connection import CodeEvent, ProjectConnection
+from app.models.connection import CodeEvent, ProjectConnection, TrackerEntry
 from app.models.documents import DocumentRoot, DocumentTaskLink, ProjectDocument
 from app.models.knowledge import (
     KnowledgeItem,
@@ -52,6 +52,7 @@ __all__ = [
     "TaskActivity",
     "TaskComment",
     "TaskDependency",
+    "TrackerEntry",
     "VoiceNote",
     "WorkLog",
     "Workstream",

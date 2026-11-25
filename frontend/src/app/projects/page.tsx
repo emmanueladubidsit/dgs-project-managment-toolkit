@@ -3,6 +3,7 @@ import { FolderPlus, Search, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { EmptyState, ExplainedProgress, PageHeader, PriorityBadge, QueryView } from "@/components/common";
+import { DiscoverProjectsDialog, StartProjectDialog } from "@/components/project-discovery";
 import { ProjectFormDialog } from "@/components/project-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,8 @@ export default function ProjectsPage() {
     <>
       <PageHeader title="Projects" description="Every project, its stage and how far it has progressed."
         actions={<>
+          <DiscoverProjectsDialog />
+          <StartProjectDialog />
           <Button variant="outline" asChild><Link href="/assistant"><Sparkles /> Start from an idea</Link></Button>
           <ProjectFormDialog trigger={<Button><FolderPlus /> New project</Button>} />
         </>} />
