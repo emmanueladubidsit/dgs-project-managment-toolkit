@@ -70,7 +70,8 @@ that already exist are skipped. The format is documented at the top of `backend/
 ## Configuration
 
 - `backend/.env` (from `backend/.env.example`): `DATABASE_URL`, `TEST_DATABASE_URL`,
-  `CORS_ORIGINS`, `LOG_LEVEL`.
+  `CORS_ORIGINS`, `LOG_LEVEL`, `PROJECTS_ROOT` (the recommended projects folder, default
+  `~/Projects`; changeable in Administration → Projects folder).
 - `frontend/.env.local` (optional, from `frontend/.env.example`): `API_ORIGIN`.
 - Root `.env` (optional, from `.env.example`): Docker Compose database credentials and port.
 

@@ -56,7 +56,8 @@ plan_notes (period = day | week | month, period_start) — objectives, notes, av
 | `project_documents` | Title, category, status, description, project, root + relative path **or** URL **or** in-app content, tags, size and modified time from disk; unique (root, path). |
 | `document_task_links` | Document ↔ task. |
 | `voice_notes` | Recording or text: transcript (raw and edited), provider, duration, audio path only while retained, audio deletion time. |
-| `suggestions` | Kind (task / blocker / decision / progress), status (pending / approved / rejected / deferred), source note, project, generator (`rules`), payload, evidence sentence, possible duplicate task, created task or work log. |
+| `suggestions` | Kind (task / task_update / blocker / decision / progress / milestone), status (pending / approved / rejected / deferred), source, project, generator (`rules`, `git`, `progress-file`, `tracker`, `ai:…`), payload, evidence sentence, possible duplicate task, created task or work log. |
+| `tracker_entries` (migration 0006) | One item read from a project tracker (ADR 0010): project, stable key (unique per project), kind (done / status / plan / milestone / day), title, last proposed status, working-day date, the suggestion that proposed it and the task or milestone it became. A refresh proposes only new items or a changed status. `project_connections` gains `tracker_file`, `tracker_read_at` and `tracker_warnings`. |
 
 ## Constraints and indexes
 

@@ -26,7 +26,7 @@ test.afterAll(async ({ request }) => {
 test("project → workstream → milestone → tasks → plan → update → report → persistence", async ({ page }) => {
   // 1. Create a project
   await page.goto("/projects");
-  await page.getByRole("button", { name: "New project" }).first().click();
+  await page.getByRole("button", { name: "New project", exact: true }).first().click();
   const projectDialog = page.getByRole("dialog");
   await projectDialog.getByLabel("Project name (required)").fill(PROJECT);
   await projectDialog.getByLabel("Objectives").fill("Prove the MVP journey works end to end");

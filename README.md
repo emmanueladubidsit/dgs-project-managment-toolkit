@@ -73,6 +73,13 @@ Then open **http://localhost:3010**.
   approve.
 - **Stakeholder exports** — Word, PDF and PowerPoint for reports, project status updates, project
   briefs, full project reports and knowledge items.
+- **Project tracker** — each project's `docs/project-management/PROGRESS-AND-PLAN-YYYY-MM-DD.md`
+  (kept by Claude Code) is read on the **Tracker** tab: work done per working day (Mon–Fri; weekend
+  work counts on Monday), milestone status and the plan become edit-then-approve suggestions,
+  with **Approve all** ([ADR 0010](docs/DECISIONS/0010-tracker-import-and-project-discovery.md)).
+- **Projects folder and discovery** — one recommended folder for technical projects; **Discover
+  projects** adds new folders found there, and **Start a new project** creates one with a tracker
+  and CLAUDE.md.
 - **Connected codebases and Claude Code sync** — connect each project's folder (read-only):
   commits, changed files and uncommitted changes appear on the project's Codebase tab; commits
   that mention a task suggest marking it done. Claude Code can list a project's open tasks and

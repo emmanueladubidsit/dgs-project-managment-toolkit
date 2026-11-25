@@ -159,7 +159,8 @@ Messages are written in plain British English so the frontend can show them dire
 | `POST` | `/api/voice/notes/{nid}/suggestions` | Suggest |
 | `GET` | `/api/suggestions` | List Suggestions |
 | `PATCH` | `/api/suggestions/{sid}` | Edit Suggestion |
-| `POST` | `/api/suggestions/{sid}/approve` | Approve |
+| `POST` | `/api/suggestions/{sid}/approve` | Approve, with optional edits (title, status, progress, milestone, workstream, dates) |
+| `POST` | `/api/suggestions/approve-batch` | Approve several (milestones first); per-item results |
 | `POST` | `/api/suggestions/{sid}/reject` | Reject |
 | `POST` | `/api/suggestions/{sid}/defer` | Defer |
 | `GET` | `/api/ai/status` | Status |
@@ -182,7 +183,14 @@ Messages are written in plain British English so the frontend can show them dire
 | `GET` | `/api/projects/{project_id}/connection` | Get Connection |
 | `PUT` | `/api/projects/{project_id}/connection` | Connect |
 | `DELETE` | `/api/projects/{project_id}/connection` | Disconnect |
-| `POST` | `/api/projects/{project_id}/sync` | Sync Now |
+| `POST` | `/api/projects/{project_id}/sync` | Sync Now (also refreshes the tracker) |
+| `POST` | `/api/projects/{project_id}/tracker/refresh` | Read the newest tracker and propose changes (ADR 0010) |
+| `GET` | `/api/tracker/instructions` | CLAUDE.md text describing the tracker format |
+| `GET` | `/api/settings/projects` | Projects folder (`root`, `exists`, `source`) |
+| `PUT` | `/api/settings/projects` | Set the projects folder (`create: true` creates it) |
+| `GET` | `/api/project-discovery` | Project folders in the projects folder that are not connected yet |
+| `POST` | `/api/project-discovery/add` | Create and connect a project for a discovered folder |
+| `POST` | `/api/project-discovery/start` | Create a new project folder with a tracker and CLAUDE.md, then the project |
 | `GET` | `/api/projects/{project_id}/code-events` | Code Events |
 | `POST` | `/api/code-events/{event_id}/save-as-update` | Save Event As Update |
 | `GET` | `/api/claude/setup` | Setup |

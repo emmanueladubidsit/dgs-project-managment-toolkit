@@ -1,6 +1,6 @@
 # ADR 0009 — Local progress-file sync is the default; Claude Code integration is optional
 
-- **Status:** Accepted · 21 November 2026 · amends ADR 0008
+- **Status:** Accepted · 21 November 2026 · amends ADR 0008 · amended by ADR 0010 (project trackers)
 
 ## Context
 

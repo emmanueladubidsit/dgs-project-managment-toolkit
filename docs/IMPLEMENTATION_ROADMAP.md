@@ -1,6 +1,6 @@
 # Implementation roadmap
 
-Last updated: **21 November 2026** (second session). Update this file at the end of every working session.
+Last updated: **25 November 2026**. Update this file at the end of every working session.
 
 | Phase | Scope | Status |
 | --- | --- | --- |
@@ -17,6 +17,24 @@ Last updated: **21 November 2026** (second session). Update this file at the end
 | 10 | Administration, polish, release | Partly done (health, diagnostics, backup guidance) |
 
 ## Session log
+
+### 25 November 2026 — project tracker import, projects folder and discovery
+
+- New **Tracker** tab: reads the newest `docs/project-management/PROGRESS-AND-PLAN-*.md` and proposes
+  work done per working day, milestone status (Verified/In progress/Not started), milestones M2–Mk
+  and planned to-do tasks. Weekend work counts on the following Monday. Every item can be edited
+  (title, status, progress, milestone, workstream, dates) before approval; approve per item, per
+  day/section or all (new `approve-batch`). Nothing changes without approval (ADR 0002). ADR 0010.
+- Matching is conservative after testing on the real AI Risk tracker: ID or near-identical title
+  only; "ISSUE-x logged" never closes ISSUE-x; loose overlaps are flagged "possibly the same as…";
+  planned work on an open task proposes its day or a reschedule.
+- Projects folder (`PROJECTS_ROOT`, Administration) set to `MY RESEARCH & WORK/Projects` and created;
+  **Discover projects** and **Start a new project** (writes only a new folder with a tracker and
+  CLAUDE.md, never overwriting). Migration 0006 (`tracker_entries`, tracker fields, milestone
+  suggestions). Dev-server overlay fix from 23 November is in `next.config.ts`.
+- Real data: AI Risk tracker read with no warnings (6 milestones, 56 tasks, 2 scheduling updates,
+  6 daily work logs proposed). The other two projects have no tracker yet.
+- Tests: 120 backend, 24 frontend, 10 end-to-end — all passing.
 
 ### 23 November 2026 — dev overlay fix
 

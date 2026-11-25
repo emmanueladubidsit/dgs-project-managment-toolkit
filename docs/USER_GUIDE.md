@@ -142,9 +142,41 @@ tools are under **Administration → Claude Code**; they change Claude Code's se
 task data with Claude, so use them only if your organisation allows it (task sharing is off by
 default). Add people's names under **Administration → Privacy** to have them masked.
 
+### Project tracker (work done each day)
+
+Each project keeps a tracker at `docs/project-management/PROGRESS-AND-PLAN-YYYY-MM-DD.md` (Claude
+Code writes it; the newest date wins). On the project's **Tracker** tab, press **Refresh tracker**
+(the background sync also does this). The workspace proposes, grouped by working day:
+
+- **Work done** each day: matching tasks marked done, new done tasks, and one work-log entry per day.
+- **Milestones** (`Week 1 milestone`, `M3: …`) with their status and due date, and the
+  **milestone criteria** (Verified → Completed, In progress, Not started → To do).
+- **The plan**: to-do tasks on their planned day under their milestone, or a new planned day for an
+  existing task.
+
+Working days are **Monday to Friday**: anything done on a Saturday or Sunday is counted on the
+following Monday. Click **Edit** on any item to change its title, status, progress, milestone,
+workstream or dates, then **Approve**, **Reject** or **Later**, or approve a whole day, section or
+everything at once. Nothing changes until you approve. Items flagged “possibly the same as …”
+probably already exist: reject them if so. Rejected items are not proposed again.
+
+### Projects folder and discovery
+
+Keep technical projects in one folder (set under **Administration → Projects folder**; here
+`MY RESEARCH & WORK/Projects`). On **Projects**:
+
+- **Discover projects** lists project folders there that are not connected yet; **Add** creates the
+  project and connects its folder (read only).
+- **Start a new project** creates the folder with a starter tracker and a `CLAUDE.md` telling
+  Claude Code how to keep it. Nothing existing is overwritten.
+
+For an existing project, copy the tracker instructions from **Administration → Projects folder**
+into its `CLAUDE.md`.
+
 ## 14. Administration
 
-**Administration** shows health, database version and size, record counts and backup commands.
+**Administration** shows health, database version and size, record counts, backup commands and
+the projects folder.
 
 ## Coming later
 
